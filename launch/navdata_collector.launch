@@ -1,0 +1,8 @@
+<!-- -->
+
+<launch>
+
+    <rosparam command="load" file="$(find navdata_collector)/param/navdata_collector.yaml"/>
+    <node pkg="navdata_collector" type="navdata_collector_node" name="navdata_collector" output="screen"/>
+    
+</launch>

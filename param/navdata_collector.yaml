@@ -1,0 +1,7 @@
+
+navdata_collector:
+    world_frame_id:     "map"
+    base_frame_id:      "base_link"
+    rgb_topic:          "rgb"   
+    depth_topic:        "depth"
+    metadata_topc:      "metadata"
