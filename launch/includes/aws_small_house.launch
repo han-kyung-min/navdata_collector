@@ -16,6 +16,7 @@
   </include-->
   
       <include file="$(find autoexplorer)/launch/includes/former.launch.xml">
+        <arg name="init_pose" value="-x 2.0 -y 0.0 -z 0.2"/>
       </include>
 
 

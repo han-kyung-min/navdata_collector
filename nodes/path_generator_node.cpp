@@ -6,22 +6,22 @@
  */
 
 
-#include "navdata_collector.hpp"
+#include "path_generator.hpp"
 
-using namespace navdata;
+using namespace navdata_collector;
 
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, "navdata_collector");
+	ros::init(argc, argv, "path_generator");
 	const ros::NodeHandle nh;
 	const ros::NodeHandle private_nh("~");
 
 	ros::WallTime start_, end_;
 	ROS_INFO("args: %s %s %s\n", argv[0], argv[1], argv[2]);
 
-	NavDataCollector oDataCollector(private_nh, nh);
+	PathGenerator oPathGenerator(private_nh, nh);
 
-	while( ros::ok() & !oDataCollector.isDone()  )
+	while( ros::ok() & !oPathGenerator.isDone() )
 	{
 		ros::spinOnce();
 	}

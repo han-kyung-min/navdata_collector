@@ -5,41 +5,53 @@
 <!--  <arg name="slam_method" default="gmapping"/>   
   <include file="$(find autoexplorer)/launch/includes/start_$(arg slam_method).launch">
   </include>-->
-  
-    <!-- start SLAM -->
-  <node pkg="slam_toolbox" type="lifelong_slam_toolbox_node" name="slam_toolbox" output="screen">
-      <remap from="/scan"  to="/base_scan"/>
-      <rosparam command="load" file="$(find slam_toolbox)/config/mapper_params_lifelong.yaml" />
-  </node>
-  
+    
   <!--include file="$(find autoexplorer)/launch/includes/start_gmapping.launch">
   </include-->
-
-  <arg name="cmd_vel_topic" default="cmd_vel" />
-  <arg name="odom_topic" default="odom" />
+    
+  <rosparam command="load" file="$(find navdata_collector)/param/navdata_collector.yaml"/>
+<!-- octomap -->
+  <node name="scan2ptcloud" pkg="navdata_collector" type="scan2ptcloud_node">
+  </node>  
   
+  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 10">
+  </node>
+  
+  <include  file="$(find octomap_server)/launch/octomap_mapping.launch">
+    <arg name="base_frame_id" value="base_link"/>
+  </include>
+
+<!-- start SLAM -->
+  <!--node pkg="slam_toolbox" type="lifelong_slam_toolbox_node" name="slam_toolbox" output="screen">
+      <remap from="/scan"  to="/base_scan"/>
+      <rosparam command="load" file="$(find slam_toolbox)/config/mapper_params_lifelong.yaml" />
+  </node--> 
+  
+  <arg name="cmd_vel_topic" default="/former_base_controller/cmd_vel" />
+  <arg name="odom_topic" default="/former_base_controller/odom" />
+  <arg name="move_forward_only" default="false"/>
+
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">  
     <param name="base_local_planner" value="teb_local_planner/TebLocalPlannerROS" />
-    <rosparam file="$(find autoexplorer)/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
-    <rosparam file="$(find autoexplorer)/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find autoexplorer)/param/param_teb/costmap_common_params_former.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find autoexplorer)/param/param_teb/costmap_common_params_former.yaml" command="load" ns="local_costmap" />
     <rosparam file="$(find autoexplorer)/param/param_teb/local_costmap_params.yaml" command="load" />
     <rosparam file="$(find autoexplorer)/param/param_teb/global_costmap_params.yaml" command="load" />
     <rosparam file="$(find autoexplorer)/param/param_teb/move_base_params.yaml" command="load" />
-    <rosparam file="$(find autoexplorer)/param/param_teb/teb_local_planner_params.yaml" command="load" />
+    <rosparam file="$(find autoexplorer)/param/param_teb/teb_local_planner_params_former.yaml" command="load" />
     <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
     <remap from="odom" to="$(arg odom_topic)"/>
 
     <param name="global_costmap/global_frame" value="map"/>
     <param name="global_costmap/robot_base_frame" value="base_link"/>
     <param name="global_costmap/laser_scan_sensor/sensor_frame" value="laser_link"/>
-    <param name="global_costmap/laser_scan_sensor/topic" value="base_scan"/>    <!--"scan"/-->    
+    <param name="global_costmap/laser_scan_sensor/topic" value="scan"/>    
     <param name="local_costmap/global_frame" value="odom"/>
     <param name="local_costmap/robot_base_frame" value="base_link"/>
     <param name="local_costmap/laser_scan_sensor/sensor_frame" value="laser_link"/>
-    <param name="local_costmap/laser_scan_sensor/topic" value="base_scan"/>      <!--"scan"/-->
-    <param name="local_costmap/obstacle_layer/laser_scan_sensor/topic" value="base_scan"/>   <!--"scan"/-->
+    <param name="local_costmap/laser_scan_sensor/topic" value="scan"/>
+    <param name="local_costmap/obstacle_layer/laser_scan_sensor/topic" value="scan"/>
     <param name="TebLocalPlannerROS/map_frame" value="odom"/>
-    
   </node>
   
   

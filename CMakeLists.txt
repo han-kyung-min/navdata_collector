@@ -8,20 +8,27 @@ project(navdata_collector)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  actionlib
+  actionlib_msgs
+  cv_bridge
+  nav_msgs
+  map_msgs
   roscpp
   rospy
   std_msgs
+  costmap_2d
+  move_base
   geometry_msgs
-  actionlib
-  actionlib_msgs
   message_filters
-  nav_msgs
   sensor_msgs
+  tf
+  rosbag
   message_generation
 )
 
 #message("\n proj name: \n" ${PROJECT_NAME})
 
+find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -66,7 +73,9 @@ find_package(catkin REQUIRED COMPONENTS
 
 add_message_files(
   FILES
-  metadata.msg
+  rgbd_metadata.msg
+  scan_metadata.msg
+  comp_metadata.msg
 )
 
 
@@ -135,8 +144,8 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS message_runtime std_msgs nav_msgs roscpp geometry_msgs sensor_msgs actionlib actionlib_msgs
-  #DEPENDS OpenCV OpenMP
+  CATKIN_DEPENDS std_msgs nav_msgs roscpp rospy geometry_msgs sensor_msgs costmap_2d move_base rosbag 
+  DEPENDS OpenCV  #OpenMP
 )
 
 
@@ -148,6 +157,8 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  ${CATKIN_DEVEL_PREFIX}/include
+  ${CATKIN_DEVEL_PREFIX}/../install/include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -160,7 +171,7 @@ message("pkg: " ${catkin_INCLUDE_DIRS})
 
 add_library(navdata_collector SHARED ${SRC_FILES})
 target_link_libraries(navdata_collector 
-${catkin_LIBRARIES} #${OpenCV_LIBRARIES} ${OpenMP_LIBS}
+${catkin_LIBRARIES} ${OpenCV_LIBRARIES} # ${OpenMP_LIBS}
 )
 
 set_target_properties( navdata_collector PROPERTIES
@@ -183,8 +194,17 @@ set_target_properties( navdata_collector PROPERTIES
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/navdata_collector_node.cpp)
 
-add_executable(${PROJECT_NAME}_node example/navdata_collector_node.cpp)
-target_link_libraries(${PROJECT_NAME}_node navdata_collector)
+add_executable(navdata_collector_node nodes/navdata_collector_node.cpp)
+add_executable(path_generator_node nodes/path_generator_node.cpp)
+add_executable(scan2ptcloud_node nodes/scan_to_ptcloud_node.cpp)
+add_executable(viz_helper_node nodes/viz_helper_node.cpp)
+
+add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+target_link_libraries(navdata_collector_node navdata_collector)
+target_link_libraries(path_generator_node navdata_collector)
+target_link_libraries(scan2ptcloud_node navdata_collector)
+target_link_libraries(viz_helper_node navdata_collector)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -221,7 +241,7 @@ target_link_libraries(${PROJECT_NAME}_node navdata_collector)
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
-install(TARGETS ${PROJECT_NAME}_node
+install(TARGETS navdata_collector_node path_generator_node scan2ptcloud_node viz_helper_node
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -247,9 +267,9 @@ install(DIRECTORY worlds/
 DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/worlds
 PATTERN ".git" EXCLUDE)
 
-install(DIRECTORY urdf/
-DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
-PATTERN ".git" EXCLUDE)
+# install(DIRECTORY urdf/
+# DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/urdf
+# PATTERN ".git" EXCLUDE)
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html

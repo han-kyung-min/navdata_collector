@@ -3,6 +3,9 @@
 <launch>
 
     <rosparam command="load" file="$(find navdata_collector)/param/navdata_collector.yaml"/>
+        
+    <include file="$(find navdata_collector)/launch/includes/move_former_gazebo.launch"/>
+
     <node pkg="navdata_collector" type="navdata_collector_node" name="navdata_collector" output="screen"/>
     
 </launch>
