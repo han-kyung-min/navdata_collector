@@ -35,6 +35,7 @@ mn_data_cnt(0), mstr_twist_topic("/former_base_controller/cmd_vel"), mstr_scan_t
 	message_filters::Subscriber<geometry_msgs::TwistStamped> m_mf_velSub(m_nh, mstr_twiststamped_topic, 1) ;
 	message_filters::Subscriber<geometry_msgs::PoseStamped> m_mf_poseSub(m_nh, mstr_robotpose_topic, 1)  ;
 
+	message_filters::Subscriber<nav_msgs::Odometry> m_mf_odomSub(m_nh, "", 1)
 
 //	ROS_INFO("rgb topic name: %s\n", mstr_rgb_topic.c_str()) ;
 //	ROS_INFO("depth topic name: %s\n", mstr_depth_topic.c_str()) ;

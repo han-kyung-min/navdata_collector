@@ -13,7 +13,7 @@ navdata_collector:
     
     bagfile_path:      "/media/results/navdata_collector/"
     
-    max_nav_time:       3600 # seconds
+    max_nav_time:       7200 # seconds
     global_width:       2048
     global_height:      2048
     
