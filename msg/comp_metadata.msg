@@ -1,10 +1,11 @@
-# rgb, depth, pose data msg
+# rgb, depth, scan, pose data msg
 # reserved
 
 Header header
 
 sensor_msgs/Image rgb
+sensor_msgs/Image depth
 sensor_msgs/LaserScan scan
+nav_msgs/OccupancyGrid map
 geometry_msgs/Twist cmd_vel
 geometry_msgs/Pose rpose
-

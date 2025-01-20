@@ -15,8 +15,10 @@ m_nh_private(private_nh_),
 m_nh(nh_),
 mp_cost_translation_table(NULL),
 m_move_client("move_base", true),
+mb_data_collection_is_done(false),
 mstr_worldframe_id("map"), mstr_baseframe_id("base_link"),
-mn_numpyrdownsample(0), mn_occupancy_thr(50), mn_obstacle_cost_thr(24), mn_mapcallcnt(0), mn_max_nav_time(3600), mf_min_targetdist_meter(8.0),
+mn_numpyrdownsample(0), mn_occupancy_thr(50), mn_obstacle_cost_thr(24), mn_mapcallcnt(0),  mf_min_targetdist_meter(8.0),
+mn_tot_nav_time(0), mn_max_nav_time(3600),
 mn_globalmap_width(2048), mn_globalmap_height(2048)
 {
 // params
@@ -34,6 +36,7 @@ mn_globalmap_width(2048), mn_globalmap_height(2048)
 	m_globalCostmapSub 	= m_nh.subscribe("move_base/global_costmap/costmap", 1, &PathGenerator::globalCostmapCallBack, this );
 	m_mapframedataSub  	= m_nh.subscribe("move_base/global_costmap/costmap", 1, &PathGenerator::mapdataCallback, this); // kmHan
 
+//	m_is_navcollector_inialized = m_nh.subscribe("navdata_collector_is_initialized", 1, callback, tracked_object, transport_hints)
 // publisher
 	m_currentgoalPub = m_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("curr_goalpose", 10);
 	m_departureFlagPub = m_nh.advertise<std_msgs::Bool>("departure_flag", 1) ;
@@ -74,6 +77,18 @@ mn_globalmap_width(2048), mn_globalmap_height(2048)
 
     uint32_t start_time = ros::Time::now().sec ;
     mn_start_nav_time = static_cast<int>(start_time) ;
+
+	while (true)
+	{
+		if( ros::topic::waitForMessage<std_msgs::Bool>("navdata_collector_is_initialized", m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("Navdata_collector initialized \n");
+			break ;
+		}
+		else
+			ROS_WARN("@PathGenerator Cannot start path_generator b/c navdata_collector has not been initilized yet \n" );
+	}
+
 }
 
 PathGenerator::~PathGenerator()
@@ -311,7 +326,6 @@ int PathGenerator::sampleNextGoal( const cv::Mat& costmap_img, const cv::Point& 
 	double fdist2target = std::sqrt(  fdist2target_sq  ) ;
 	ROS_INFO("Sampled a new goal @(%f %f) of cost < %d > which is < %f > away from the robot \n",
 			targetgoal_gm.x, targetgoal_gm.y, costmap_img.data[nsampleidx], fdist2target);
-
 
 	return 1 ;
 }

@@ -164,7 +164,8 @@ protected:
 	ros::ServiceClient m_makeplan_client;
 
 // subscriber
-	ros::Subscriber 	m_globalCostmapSub, m_currGoalSub, m_globalplanSub, m_mapframedataSub ;
+	ros::Subscriber 	m_globalCostmapSub, m_currGoalSub, m_globalplanSub, m_mapframedataSub,
+						m_is_navcollector_inialized ;
 
 // publisher
 	ros::Publisher 		m_markercandPub, m_makergoalPub,
