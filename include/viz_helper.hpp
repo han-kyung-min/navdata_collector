@@ -103,7 +103,7 @@ private:
 	ros::NodeHandle m_nh;
 	ros::NodeHandle m_nh_private;
 
-	ros::Subscriber m_vizDataSub, m_expdoneSub, m_targetGoalSub;
+	ros::Subscriber m_vizDataSub, m_doneSub, m_targetGoalSub;
 
 	ros::Publisher  m_markerGoalPub, m_markerGoalCandPub;
 

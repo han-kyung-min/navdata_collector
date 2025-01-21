@@ -59,7 +59,7 @@ namespace scan2cloud
 //};
 
 Scan2PointCloud::Scan2PointCloud(const std::string& strfile_ofs, const std::string& strinfo_ofs):
-m_nScanCnt(0)
+m_nScanCnt(0), mb_isdone(false)
 {
 	//m_tfListener = TransformListener(m_tfBuffer);
 
@@ -68,18 +68,19 @@ m_nScanCnt(0)
 
 	m_ptCloudPub		= m_nh.advertise<sensor_msgs::PointCloud2>("scan_ptcloud",1);
 	m_laserScanSub  	= m_nh.subscribe("base_scan", 1, &Scan2PointCloud::scanCallback, this); // kmHan
+	m_doneSub			= m_nh.subscribe("data_collection_is_completed", 1, &Scan2PointCloud::doneCallBack, this);
 };
 
 Scan2PointCloud::Scan2PointCloud(const ros::NodeHandle private_nh_, const ros::NodeHandle &nh_):
 m_nh_private(private_nh_),
 m_nh(nh_),
-m_baseFrameId("base_footprint")
+m_baseFrameId("base_footprint"), mb_isdone(false)
 {
 	m_nScanCnt = 0;
 	ROS_INFO("instantiating the Scan2PointCloud node \n");
 	m_ptCloudPub		= m_nh.advertise<sensor_msgs::PointCloud2>("scan_ptcloud",1);
 	m_laserScanSub  	= m_nh.subscribe("scan", 1, &Scan2PointCloud::scanCallback, this); // kmHan
-
+	m_doneSub			= m_nh.subscribe("data_collection_is_completed", 1, &Scan2PointCloud::doneCallBack, this);
 //	if(!m_nh.hasParam("base_frame_id"))
 //		ROS_ERROR("No param named 'base_frame_id' \n");
 
@@ -149,7 +150,11 @@ void Scan2PointCloud::scanCallback( const sensor_msgs::LaserScan::ConstPtr& scan
   // Do something with cloud.
 };
 
-
+void Scan2PointCloud::doneCallBack( const std_msgs::Bool::ConstPtr& done_msg)
+{
+	if( (*done_msg).data == true )
+		mb_isdone = true;
+}
 
 }
 

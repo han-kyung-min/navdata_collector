@@ -61,7 +61,7 @@ mb_navdata_collection_is_done(false)
 
 //	m_vizDataSub  	= m_nh.subscribe("viz_data", 1, &VizHelper::vizCallback, this); // kmHan
 	m_targetGoalSub = m_nh.subscribe("curr_goalpose", 1, &VizHelper::targetGoalCallback, this);
-	m_expdoneSub	= m_nh.subscribe("exploration_is_done", 1, &VizHelper::doneCallback, this);
+	m_doneSub		= m_nh.subscribe("data_collection_is_completed", 1, &VizHelper::doneCallback, this);
 
 	//m_frontier_region_markers = SetVizMarker( 0, visualization_msgs::Marker::ADD, 0.f, 0.f, 0.f, m_worldFrameId, 1.f, 0.f, 0.f, 1.f, 0.1 );
 	//m_frontier_region_markers.type = visualization_msgs::Marker::POINTS;

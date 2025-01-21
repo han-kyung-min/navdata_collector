@@ -38,9 +38,10 @@ mn_globalmap_width(2048), mn_globalmap_height(2048)
 
 //	m_is_navcollector_inialized = m_nh.subscribe("navdata_collector_is_initialized", 1, callback, tracked_object, transport_hints)
 // publisher
-	m_currentgoalPub = m_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("curr_goalpose", 10);
-	m_departureFlagPub = m_nh.advertise<std_msgs::Bool>("departure_flag", 1) ;
-	m_arrivalStatusPub = m_nh.advertise<std_msgs::Int8>("arrival_status", 1);
+	m_currentgoalPub 	= m_nh.advertise<geometry_msgs::PoseWithCovarianceStamped>("curr_goalpose", 10);
+	m_departureFlagPub 	= m_nh.advertise<std_msgs::Bool>("departure_flag", 1) ;
+	m_arrivalStatusPub 	= m_nh.advertise<std_msgs::Int8>("arrival_status", 1);
+	m_donePub		   	= m_nh.advertise<std_msgs::Bool>("data_collection_is_completed", 5);
 
 	mcvu_costmapimg     = cv::Mat(mn_globalmap_height, mn_globalmap_width, CV_8U, cv::Scalar(255));
 	mcvu_globalmapimg   = cv::Mat(mn_globalmap_height, mn_globalmap_width, CV_8U, cv::Scalar(127));
@@ -78,15 +79,11 @@ mn_globalmap_width(2048), mn_globalmap_height(2048)
     uint32_t start_time = ros::Time::now().sec ;
     mn_start_nav_time = static_cast<int>(start_time) ;
 
-	while (true)
+	while (ros::topic::waitForMessage<std_msgs::Bool>("navdata_collector_is_initialized", m_nh, ros::Duration(10.0) ))
 	{
-		if( ros::topic::waitForMessage<std_msgs::Bool>("navdata_collector_is_initialized", m_nh, ros::Duration(1.0) )  )
-		{
-			ROS_INFO("Navdata_collector initialized \n");
-			break ;
-		}
-		else
-			ROS_WARN("@PathGenerator Cannot start path_generator b/c navdata_collector has not been initilized yet \n" );
+
+//			ROS_INFO("Navdata_collector initialized \n");
+		ROS_WARN("@PathGenerator waiting for navdata_collector node to be initilized \n" );
 	}
 
 }
@@ -154,34 +151,6 @@ cv::Point PathGenerator::world2gridmap( cv::Point2f grid_pt)
 
 	return cv::Point( (int)fx, (int)fy );
 }
-
-//void PathGenerator::publishArrival( )
-//{
-//
-////	if( mb_return_home ) // return to home position
-////		moveToHome();
-//
-////    double favg_callback_time = mf_totalcallbacktime_msec / (double)(mn_mapcallcnt) ;
-////	double favg_planning_time = mf_totalplanningtime_msec / (double)(mn_mapcallcnt) ;
-////
-////	ROS_INFO("total callback time (sec) %f \n", mf_totalcallbacktime_msec / 1000 );
-////	ROS_INFO("total planning time (sec) %f \n", mf_totalplanningtime_msec / 1000 );
-////	ROS_INFO("avg callback time (msec) %f \n", favg_callback_time  );
-////	ROS_INFO("avg planning time (msec) %f \n", favg_planning_time  );
-////
-////	m_frontierpoint_markers = visualization_msgs::MarkerArray() ;
-////	m_markerfrontierPub.publish(m_frontierpoint_markers);
-////	m_targetgoal_marker = visualization_msgs::Marker() ;
-////	m_makergoalPub.publish(m_targetgoal_marker); // for viz
-//
-//	ROS_INFO("The exploration task is done... publishing -done- msg" );
-//	std_msgs::Bool arrived;
-//	arrived.data = true;
-//	m_donePub.publish( arrived );
-//
-//	ros::spinOnce();
-//}
-
 
 void PathGenerator::doneCB( const actionlib::SimpleClientGoalState& state )
 {
@@ -270,7 +239,7 @@ ROS_INFO("+++++++++++++++++++++++++ @moveRobotCallback, Nav to goal is completed
 	std_msgs::Bool bflag_false ;
 	bflag_false.data = false ;
 	m_departureFlagPub.publish(bflag_false) ;
-ROS_INFO("sent FALSE depart msg from path_generator \n");
+ROS_INFO("@PathGenerator  sent FALSE depart msg \n");
 // publish result flag
 
 }
@@ -386,7 +355,12 @@ void PathGenerator::mapdataCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg
 {
 	if( mn_tot_nav_time > mn_max_nav_time)
 	{
-		ROS_INFO("Max data collection time has been reached. Closing this node \n");
+		ROS_WARN("***************************************************************** \n"
+				"** Max data collection time has been reached. Closing this node. * 	\n"
+				"****************************************************************** \n");
+		std_msgs::Bool bisdone;
+		bisdone.data = true ;
+		m_donePub.publish(bisdone);
 		mb_data_collection_is_done = true;
 		return;
 	}

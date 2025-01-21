@@ -83,9 +83,8 @@ public:
 								const geometry_msgs::TwistStampedConstPtr& vel_msg,
 								const geometry_msgs::PoseStamped::ConstPtr& pose_msg);
 
-//	void metadataCallBack( 	const sensor_msgs::LaserScanConstPtr& scan_msg,
-//							const geometry_msgs::TwistConstPtr& vel_msg,
-//							const geometry_msgs::PoseStamped::ConstPtr& pose_msg ) ;
+	void doneCallBack( const std_msgs::BoolConstPtr& done_msg ) ;
+
 	void twistReceiveCallBack( const geometry_msgs::TwistConstPtr& msg ) ;
 	void publishRobotPose(  ) ;
 	void publishRobotVel( );
@@ -98,7 +97,9 @@ public:
 	bool waitForCompMetadata( ) ;
 
 	//void generateGridmapFromCostmap( );
-	inline bool isDone() const {  return mu_bagfile_cnt > mu_max_num_bagfiles ; }
+	inline bool isDone() const {  return ( mn_bagfile_cnt > mn_max_num_bagfiles || mb_navdata_collection_is_completed ); }
+
+
 
 	std::string fmt(const std::string& fmt, ...)
 	{
@@ -149,7 +150,7 @@ private:
 
 	ros::NodeHandle m_nh;
 	ros::NodeHandle m_nh_private;
-	ros::Subscriber	m_robotPoseSub,  m_robotTwistSub, m_currGoalSub  ;
+	ros::Subscriber	m_robotPoseSub,  m_robotTwistSub, m_currGoalSub, m_doneSub  ;
 
 	message_filters::Subscriber<sensor_msgs::Image> m_mf_rgbSub ;
 	message_filters::Subscriber<sensor_msgs::Image> m_mf_depthSub ;
@@ -196,9 +197,10 @@ private:
 
 	rosbag::Bag m_bag;
 
-	uint32_t mu_bagfile_cnt, mu_max_num_bagfiles ;
+	int32_t mn_bagfile_cnt, mn_max_num_bagfiles ;
 	string mstr_bagfile, mstr_bagfile_path ;
 	bool mb_is_bag_accessible ;
+	bool mb_navdata_collection_is_completed ;
 
 	std::mutex mutex_bag;
 };

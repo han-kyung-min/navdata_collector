@@ -82,13 +82,15 @@ public:
 	virtual ~Scan2PointCloud();
 
 	void scanCallback( const sensor_msgs::LaserScan::ConstPtr& scan_in );
+	void doneCallBack( const std_msgs::Bool::ConstPtr& done_msg);
+	inline bool isDone( ) { return mb_isdone; }
 
 private:
 
 	ros::NodeHandle m_nh;
 	ros::NodeHandle m_nh_private;
 
-	ros::Subscriber m_laserScanSub ;
+	ros::Subscriber m_laserScanSub, m_doneSub ;
 	ros::Publisher  m_ptCloudPub;
 
 	std::string m_mapFrameId ;
@@ -105,6 +107,7 @@ private:
 //	std::ofstream* mp_ofsinfo ;
 
 	int m_nScanCnt ;
+	bool mb_isdone ;
 //	message_filters::Subscriber<geometry_msgs::Point>
 };
 

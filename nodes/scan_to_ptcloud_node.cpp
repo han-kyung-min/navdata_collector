@@ -65,7 +65,7 @@ int main(int argc, char** argv)
   ROS_WARN("scan2ptcloud initialized \n");
 //  oScan2PtCloud.initialize();
 
-  while( ros::ok() )
+  while( ros::ok() && !oScan2PtCloud.isDone() )
   {
 	  try{
 		  ros::spinOnce();

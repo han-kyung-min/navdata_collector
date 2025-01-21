@@ -1,0 +1,12 @@
+<!-- -->
+
+<launch>
+
+    <include file="$(find navdata_collector)/launch/includes/aws_small_house.launch"/>
+    
+    <include file="$(find navdata_collector)/launch/includes/move_former_gazebo.launch"/>
+<!-- rviz -->
+    <!--node name="rviz" pkg="rviz" type="rviz" required="true" args="-d $(arg rviz_config)"/-->   
+
+    
+</launch>

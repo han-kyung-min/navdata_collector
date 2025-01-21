@@ -14,9 +14,9 @@ namespace navdata_collector
 NavDataCollector::NavDataCollector(const ros::NodeHandle private_nh_, const ros::NodeHandle &nh_):
 m_nh_private(private_nh_),
 m_nh(nh_),
-mu_data_cnt(0),
+mu_data_cnt(0), mn_bagfile_cnt(0), mn_max_num_bagfiles(1000),
 mstr_twist_topic("/former_base_controller/cmd_vel"), mstr_scan_topic("scan"), mstr_twiststamped_topic("robot_twist_stamped"),
-mb_is_bag_accessible(false), mu_bagfile_cnt(0), mu_max_num_bagfiles(1000)
+mb_is_bag_accessible(false), mb_navdata_collection_is_completed(false)
 {
 	m_nh.param("/navdata_collector/world_frame_id", mstr_worldframe_id, std::string("map"));
 	m_nh.param("/navdata_collector/robot_frame_id", mstr_robotframe_id, std::string("base_link"));
@@ -30,18 +30,18 @@ mb_is_bag_accessible(false), mu_bagfile_cnt(0), mu_max_num_bagfiles(1000)
 	m_nh.param("/navdata_collector/twist_topic", mstr_twist_topic, mstr_twist_topic);
 	m_nh.param("/navdata_collector/twiststamped_topic", mstr_twiststamped_topic, mstr_twiststamped_topic);
 	m_nh.param("/navdata_collector/metadata_topc", mstr_metadata_topic, string(""));
+	m_nh.param("/navdata_collector/max_num_bagfiles", mn_max_num_bagfiles, mn_max_num_bagfiles);
 
 	m_nh.getParam("/navdata_collector/bagfile_root_path", mstr_bagfile_path); // root file path
 
-//	time_t currentTime = time(0);
-//	tm* currentDate = localtime(&currentTime);
-//	char filename[256] = {0};
-//	strcat(filename, fmt("data_%04d-%02d.%02d",
-//			currentDate->tm_year+1900, currentDate->tm_mon+1, currentDate->tm_mday).c_str());
-//	mstr_bagfile_path = mstr_bagfile_path + "/" + string(filename) ;
+	time_t start_time = time(0);
+	tm* start_date = localtime(&start_time);
+	char filename[256] = {0};
+	strcat(filename, fmt("%04d-%02d-%02d-%02d",
+			start_date->tm_year+1900, start_date->tm_mon+1, start_date->tm_mday, start_date->tm_hour).c_str());
+	mstr_bagfile_path = mstr_bagfile_path + "/" + string(filename) ;
 
 // wait for essential messages for only once
-
 
 	m_mf_rgbSub.subscribe(m_nh, mstr_rgb_topic, 1) ;
 	m_mf_depthSub.subscribe(m_nh, mstr_depth_topic, 1)  ;
@@ -50,9 +50,9 @@ mb_is_bag_accessible(false), mu_bagfile_cnt(0), mu_max_num_bagfiles(1000)
 	m_mf_scanSub.subscribe(m_nh, mstr_scan_topic, 1);
 	m_mf_mapSub.subscribe(m_nh, mstr_map_topic, 1);
 
-	m_arrivalmsgSub 	= m_nh.subscribe( "arrival_status", 1, &NavDataCollector::arrivalCallBack, this);
-	m_departmsgSub 		= m_nh.subscribe( "departure_flag", 1, &NavDataCollector::departFlagCallBack, this );
-	//
+//	m_arrivalmsgSub 	= m_nh.subscribe( "arrival_status", 1, &NavDataCollector::arrivalCallBack, this);
+	m_departmsgSub 		= m_nh.subscribe( "departure_flag", 5, &NavDataCollector::departFlagCallBack, this );
+	m_doneSub			= m_nh.subscribe( "data_collection_is_completed", 1, &NavDataCollector::doneCallBack, this ) ;
 
 //	ROS_INFO("rgb topic name: %s\n", mstr_rgb_topic.c_str()) ;
 //	ROS_INFO("depth topic name: %s\n", mstr_depth_topic.c_str()) ;
@@ -391,21 +391,21 @@ void NavDataCollector::CompMetaDataCallBack(	const sensor_msgs::ImageConstPtr& r
 void NavDataCollector::departFlagCallBack( const std_msgs::BoolConstPtr& depart_msg )
 {
 	// set bag file name
-	time_t currentTime = time(0);
-	tm* currentDate = localtime(&currentTime);
+	time_t current_time = time(0);
+	tm* current_date = localtime(&current_time);
 	char filename[256] = {0};
 
 	//strcpy(filename, "C:/Users/Admin/Documents/MATLAB/datafile");
-	strcat(filename, fmt("bag_%04d-%02d.%02d-%02d-%02d-%02d_%05d",
-			currentDate->tm_year+1900, currentDate->tm_mon+1, currentDate->tm_mday,
-			currentDate->tm_hour, currentDate->tm_min, currentDate->tm_sec, mu_bagfile_cnt).c_str());
+	strcat(filename, fmt("bag_%04d-%02d-%02d-%02d-%02d-%02d_%05d",
+			current_date->tm_year+1900, current_date->tm_mon+1, current_date->tm_mday,
+			current_date->tm_hour, current_date->tm_min, current_date->tm_sec, mn_bagfile_cnt).c_str());
 
 	ros::Time ctime = ros::Time::now() ;
 	mstr_bagfile = mstr_bagfile_path + "/" + string(filename) + ".bag" ;
 
 	// robot begins to move
 	std_msgs::Bool data = *depart_msg ;
-ROS_INFO("Got departure msg %s",  (data.data == true) ? "TRUE" : "FALSE" );
+ROS_INFO("@NavDataCollector Got departure msg %s",  (data.data == true) ? "TRUE" : "FALSE" );
 
 	if(data.data)
 	{
@@ -414,38 +414,47 @@ ROS_INFO("Got departure msg %s",  (data.data == true) ? "TRUE" : "FALSE" );
 	}
 	else
 	{
-		const std::unique_lock<mutex> lock(mutex_bag) ;
-		mb_is_bag_accessible = false ;
-		ROS_INFO("Closing the bag file \n");
+		ROS_INFO("@NavdataCollector Got False departure msg. Closing the bag file \n");
+		{
+			const std::unique_lock<mutex> lock(mutex_bag) ;
+			mb_is_bag_accessible = false ;
+		}
 		m_bag.close();
 		return;
 	}
 
 	ROS_ASSERT( m_bag.isOpen() == false );
-	ROS_INFO("Opening <%d>th bag < %s > ", mu_bagfile_cnt, mstr_bagfile.c_str());
+	ROS_INFO("Opening <%d>th bag < %s > ", mn_bagfile_cnt, mstr_bagfile.c_str());
 	m_bag.open(mstr_bagfile.c_str(), rosbag::bagmode::Write) ;
-	mu_bagfile_cnt++ ;
+	mn_bagfile_cnt++ ;
 }
 
 
-void NavDataCollector::arrivalCallBack( const std_msgs::Int8ConstPtr& arrival_msg )
+void NavDataCollector::doneCallBack( const std_msgs::BoolConstPtr& done_msg )
 {
-	// robot stops
-	std_msgs::Int8 data = *arrival_msg ;
-
-	{
-		const std::unique_lock<mutex> lock(mutex_bag) ;
-		mb_is_bag_accessible = false ;
-	}
-
-	ROS_INFO("Robot finished its motion with status: < %d >. Closing the bag file...", data.data);
-	ROS_ASSERT( m_bag.isOpen() ) ;
-	m_bag.close() ;
-
-//	if(_bag.isOpen())
-//		_bag.close() ;
-//	else
-//		ROS_ERROR("_bag is not open for some reason.. so skipping the closing process \n");
+	if( (*done_msg).data == true )
+		mb_navdata_collection_is_completed = true;
 }
+
+//void NavDataCollector::arrivalCallBack( const std_msgs::Int8ConstPtr& arrival_msg )
+//{
+//	// robot stops
+//	std_msgs::Int8 data = *arrival_msg ;
+//
+////	{
+////		const std::unique_lock<mutex> lock(mutex_bag) ;
+////		mb_is_bag_accessible = false ;
+////	}
+////
+////	ROS_INFO("Robot finished its motion with status: < %d >. Closing the bag file...", data.data);
+////	ROS_ASSERT( m_bag.isOpen() ) ;
+////	m_bag.close() ;
+//
+//
+////	if(_bag.isOpen())
+////		_bag.close() ;
+////	else
+////		ROS_ERROR("_bag is not open for some reason.. so skipping the closing process \n");
+//}
 
 }
