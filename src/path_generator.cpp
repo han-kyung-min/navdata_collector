@@ -355,7 +355,7 @@ void PathGenerator::mapdataCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg
 {
 	if( mn_tot_nav_time > mn_max_nav_time)
 	{
-		ROS_WARN("***************************************************************** \n"
+		ROS_WARN("\n**************************************************************** \n"
 				"** Max data collection time has been reached. Closing this node. * 	\n"
 				"****************************************************************** \n");
 		std_msgs::Bool bisdone;

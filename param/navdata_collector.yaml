@@ -2,7 +2,6 @@
 navdata_collector:
     world_frame_id:     "map"
     base_frame_id:      "base_link"
-    
     rgb_topic:          "/camera/color/image_rect_color"  # former rgb topic   
     depth_topic:        "/camera/depth/image_rect_raw"  # former depth topic
     robotpose_topic:    "base_pose"
@@ -10,7 +9,7 @@ navdata_collector:
     twiststamped_topic: "robot_twist_stamped"
     scan_topic:         "scan"
     map_topic:          "map"
-    metadata_topc:      "scan_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
+    metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
     bagfile_root_path:  "/media/results/navdata_collector"
     
