@@ -74,14 +74,18 @@ public:
 	void RGBDMetaDataCallBack( 	const sensor_msgs::ImageConstPtr& rgb_msg,
 								const sensor_msgs::ImageConstPtr& depth_msg,
 								const geometry_msgs::TwistStampedConstPtr& vel_msg,
-								const geometry_msgs::PoseStamped::ConstPtr& pose_msg);
+								const geometry_msgs::PoseStamped::ConstPtr& pose_msg,
+								const nav_msgs::Odometry::ConstPtr& odom_msg,
+								const nav_msgs::Odometry::ConstPtr& odom_f_msg);
 
 	void CompMetaDataCallBack( 	const sensor_msgs::ImageConstPtr& rgb_msg,
 								const sensor_msgs::ImageConstPtr& depth_msg,
 								const sensor_msgs::LaserScanConstPtr& scan_msg,
 								const nav_msgs::OccupancyGridConstPtr& map_msg,
 								const geometry_msgs::TwistStampedConstPtr& vel_msg,
-								const geometry_msgs::PoseStamped::ConstPtr& pose_msg);
+								const geometry_msgs::PoseStamped::ConstPtr& pose_msg,
+								const nav_msgs::Odometry::ConstPtr& odom_msg,
+								const nav_msgs::Odometry::ConstPtr& odom_f_msg);
 
 	void doneCallBack( const std_msgs::BoolConstPtr& done_msg ) ;
 
@@ -160,10 +164,14 @@ private:
 	message_filters::Subscriber<geometry_msgs::PoseStamped > m_mf_poseSub ;
 	message_filters::Subscriber<geometry_msgs::TwistStamped> m_mf_velSub ;
 
+	message_filters::Subscriber<nav_msgs::Odometry> m_mf_odomSub ;
+	message_filters::Subscriber<nav_msgs::Odometry> m_mf_odomFilteredSub ;
+
 	ros::Subscriber m_arrivalmsgSub, m_departmsgSub;
 
 	typedef sync_policies::ApproximateTime
-			<sensor_msgs::Image, sensor_msgs::Image, geometry_msgs::TwistStamped, geometry_msgs::PoseStamped> ApproxRGBDTimeSyncPolicy;
+			<sensor_msgs::Image, sensor_msgs::Image, geometry_msgs::TwistStamped, geometry_msgs::PoseStamped,
+			nav_msgs::Odometry, nav_msgs::Odometry> ApproxRGBDTimeSyncPolicy;
 	typedef Synchronizer<ApproxRGBDTimeSyncPolicy> RGBD_Sync;
 
 	typedef sync_policies::ApproximateTime
@@ -172,7 +180,9 @@ private:
 
 	typedef sync_policies::ApproximateTime
 			<sensor_msgs::Image, sensor_msgs::Image, sensor_msgs::LaserScan, nav_msgs::OccupancyGrid,
-			geometry_msgs::TwistStamped, geometry_msgs::PoseStamped> ApproxCompTimeSyncPolicy;
+			geometry_msgs::TwistStamped, geometry_msgs::PoseStamped,
+			nav_msgs::Odometry, nav_msgs::Odometry>
+			ApproxCompTimeSyncPolicy;
 	typedef Synchronizer<ApproxCompTimeSyncPolicy> Comp_Sync;
 
 	boost::shared_ptr<RGBD_Sync> m_rgbd_sync;
@@ -183,8 +193,8 @@ private:
 	ros::Publisher m_robotposePub, m_robotVelPub ;
 	ros::Publisher m_initdonePub ;
 
-	string mstr_rgb_topic, mstr_depth_topic, mstr_robotpose_topic, mstr_scan_topic, mstr_map_topic, mstr_metadata_topic ;
-	string mstr_twist_topic, mstr_twiststamped_topic ;
+	string mstr_rgb_topic, mstr_depth_topic, mstr_scan_topic, mstr_map_topic, mstr_metadata_topic ;
+	string mstr_twist_topic, mstr_twiststamped_topic, mstr_robotpose_topic, mstr_odom_topic, mstr_odom_filtered_topic ;
 	string mstr_worldframe_id, mstr_robotframe_id ;
 
 	navdata_collector::rgbd_metadata m_rgbd_metadata ;

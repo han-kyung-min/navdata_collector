@@ -16,6 +16,7 @@ m_nh_private(private_nh_),
 m_nh(nh_),
 mu_data_cnt(0), mn_bagfile_cnt(0), mn_max_num_bagfiles(1000),
 mstr_twist_topic("/former_base_controller/cmd_vel"), mstr_scan_topic("scan"), mstr_twiststamped_topic("robot_twist_stamped"),
+mstr_odom_topic("/former_base_controller/odom"), mstr_odom_filtered_topic("/odometry/filtered"),
 mb_is_bag_accessible(false), mb_navdata_collection_is_completed(false)
 {
 	m_nh.param("/navdata_collector/world_frame_id", mstr_worldframe_id, std::string("map"));
@@ -25,6 +26,8 @@ mb_is_bag_accessible(false), mb_navdata_collection_is_completed(false)
 	m_nh.param("/navdata_collector/depth_topic", mstr_depth_topic, string(""));
 	m_nh.param("/navdata_collector/scan_topic", mstr_scan_topic, mstr_scan_topic);
 	m_nh.param("/navdata_collector/map_topic", mstr_map_topic, mstr_map_topic);
+	m_nh.param("/navdata_collector/odom_topic", mstr_odom_topic, mstr_odom_topic);
+	m_nh.param("/navdata_collector/odom_filt_topic", mstr_odom_filtered_topic, mstr_odom_filtered_topic);
 
 	m_nh.param("/navdata_collector/robotpose_topic", mstr_robotpose_topic, std::string(""));
 	m_nh.param("/navdata_collector/twist_topic", mstr_twist_topic, mstr_twist_topic);
@@ -49,6 +52,8 @@ mb_is_bag_accessible(false), mb_navdata_collection_is_completed(false)
 	m_mf_poseSub.subscribe(m_nh, mstr_robotpose_topic, 1)  ;
 	m_mf_scanSub.subscribe(m_nh, mstr_scan_topic, 1);
 	m_mf_mapSub.subscribe(m_nh, mstr_map_topic, 1);
+	m_mf_odomSub.subscribe(m_nh, mstr_odom_topic, 1);
+	m_mf_odomFilteredSub.subscribe(m_nh, mstr_odom_filtered_topic, 1);
 
 //	m_arrivalmsgSub 	= m_nh.subscribe( "arrival_status", 1, &NavDataCollector::arrivalCallBack, this);
 	m_departmsgSub 		= m_nh.subscribe( "departure_flag", 5, &NavDataCollector::departFlagCallBack, this );
@@ -74,8 +79,9 @@ mb_is_bag_accessible(false), mb_navdata_collection_is_completed(false)
 		{
 			waitForRGBDMetadata() ;
 
-			m_rgbd_sync.reset(new RGBD_Sync(ApproxRGBDTimeSyncPolicy(10), m_mf_rgbSub, m_mf_depthSub, m_mf_velSub, m_mf_poseSub) );
-			m_rgbd_sync->registerCallback(boost::bind(&NavDataCollector::RGBDMetaDataCallBack, this, _1, _2, _3, _4));
+			m_rgbd_sync.reset(new RGBD_Sync(ApproxRGBDTimeSyncPolicy(10), m_mf_rgbSub, m_mf_depthSub,
+					m_mf_velSub, m_mf_poseSub, m_mf_odomSub, m_mf_odomFilteredSub) );
+			m_rgbd_sync->registerCallback(boost::bind(&NavDataCollector::RGBDMetaDataCallBack, this, _1, _2, _3, _4, _5, _6));
 			m_syncdataPub	= m_nh.advertise<navdata_collector::scan_metadata>(mstr_metadata_topic, 1);
 
 			ROS_INFO("RGBD-Metadata type collection is requested. All messages are available. \n");
@@ -97,8 +103,9 @@ mb_is_bag_accessible(false), mb_navdata_collection_is_completed(false)
 			waitForCompMetadata();
 
 			m_comp_sync.reset(new Comp_Sync(ApproxCompTimeSyncPolicy(10),
-					m_mf_rgbSub, m_mf_depthSub, m_mf_scanSub, m_mf_mapSub, m_mf_velSub, m_mf_poseSub) );
-			m_comp_sync->registerCallback(boost::bind(&NavDataCollector::CompMetaDataCallBack, this, _1, _2, _3, _4, _5, _6));
+					m_mf_rgbSub, m_mf_depthSub, m_mf_scanSub, m_mf_mapSub,
+					m_mf_velSub, m_mf_poseSub, m_mf_odomSub, m_mf_odomFilteredSub) );
+			m_comp_sync->registerCallback(boost::bind(&NavDataCollector::CompMetaDataCallBack, this, _1, _2, _3, _4, _5, _6, _7, _8));
 			m_syncdataPub	= m_nh.advertise<navdata_collector::scan_metadata>(mstr_metadata_topic, 1);
 
 			ROS_INFO("Comp-Metadata type collection is requested. All messages are available. \n");
@@ -114,7 +121,6 @@ mb_is_bag_accessible(false), mb_navdata_collection_is_completed(false)
 //	ROS_INFO(" Scan-Metadata type collection is requested \n");
 
 	m_robotTwistSub = m_nh.subscribe(mstr_twist_topic, 1, &NavDataCollector::twistReceiveCallBack, this); // kmHan
-
 	m_robotposePub = m_nh.advertise<geometry_msgs::PoseStamped>(mstr_robotpose_topic, 1);
 	m_robotVelPub  = m_nh.advertise<geometry_msgs::TwistStamped>(mstr_twiststamped_topic, 1);
 
@@ -209,6 +215,29 @@ bool NavDataCollector::waitForRGBDMetadata( )
 		  ros::Duration(1.0).sleep();
 		}
 	}
+
+	while (true)
+	{
+		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_odom_topic, m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("got %s msg \n", mstr_odom_topic.c_str());
+			break ;
+		}
+		else
+			ROS_WARN("Waitining for the %s msg \n", mstr_odom_topic.c_str());
+	}
+
+	while (true)
+	{
+		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_odom_filtered_topic, m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("got %s msg \n", mstr_odom_filtered_topic.c_str());
+			break ;
+		}
+		else
+			ROS_WARN("Waitining for the %s msg \n", mstr_odom_filtered_topic.c_str());
+	}
+
 	return true;
 }
 
@@ -272,6 +301,29 @@ bool NavDataCollector::waitForCompMetadata( )
 		  ros::Duration(1.0).sleep();
 		}
 	}
+
+	while (true)
+	{
+		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_odom_topic, m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("got %s msg \n", mstr_odom_topic.c_str());
+			break ;
+		}
+		else
+			ROS_WARN("Waitining for the %s msg \n", mstr_odom_topic.c_str());
+	}
+
+	while (true)
+	{
+		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_odom_filtered_topic, m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("got %s msg \n", mstr_odom_filtered_topic.c_str());
+			break ;
+		}
+		else
+			ROS_WARN("Waitining for the %s msg \n", mstr_odom_filtered_topic.c_str());
+	}
+
 	return true;
 }
 
@@ -340,14 +392,19 @@ void NavDataCollector::ScanMetaDataCallBack( 	const sensor_msgs::LaserScanConstP
 void NavDataCollector::RGBDMetaDataCallBack( const sensor_msgs::ImageConstPtr& rgb_msg,
 						const sensor_msgs::ImageConstPtr& depth_msg,
 						const geometry_msgs::TwistStampedConstPtr& vel_msg,
-						const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
+						const geometry_msgs::PoseStamped::ConstPtr& pose_msg,
+						const nav_msgs::Odometry::ConstPtr& odom_msg,
+						const nav_msgs::Odometry::ConstPtr& odom_f_msg)
 {
 	ROS_INFO("rgbd msgs set\n");
 	m_rgbd_metadata.header 	= (*pose_msg).header ;
 	m_rgbd_metadata.rgb 	= *rgb_msg ;
 	m_rgbd_metadata.depth	= *depth_msg;
 	m_rgbd_metadata.cmd_vel	= (*vel_msg).twist ;
+
 	m_rgbd_metadata.rpose	= (*pose_msg).pose ;
+	m_comp_metadata.odom	= *odom_msg ;
+	m_comp_metadata.odom_filtered = *odom_f_msg ;
 
 	m_syncdataPub.publish(m_rgbd_metadata);
 
@@ -369,7 +426,10 @@ void NavDataCollector::CompMetaDataCallBack(	const sensor_msgs::ImageConstPtr& r
 												const sensor_msgs::LaserScanConstPtr& scan_msg,
 												const nav_msgs::OccupancyGridConstPtr& map_msg,
 												const geometry_msgs::TwistStampedConstPtr& vel_msg,
-												const geometry_msgs::PoseStamped::ConstPtr& pose_msg)
+												const geometry_msgs::PoseStamped::ConstPtr& pose_msg,
+												const nav_msgs::Odometry::ConstPtr& odom_msg,
+												const nav_msgs::Odometry::ConstPtr& odom_f_msg)
+
 {
 	ROS_INFO("comp msgs set\n");
 	m_comp_metadata.header 	= (*pose_msg).header ;
@@ -378,7 +438,10 @@ void NavDataCollector::CompMetaDataCallBack(	const sensor_msgs::ImageConstPtr& r
 	m_comp_metadata.depth	= *depth_msg;
 	m_comp_metadata.map		= *map_msg ;
 	m_comp_metadata.cmd_vel	= (*vel_msg).twist ;
+
 	m_comp_metadata.rpose	= (*pose_msg).pose ;
+	m_comp_metadata.odom	= *odom_msg ;
+	m_comp_metadata.odom_filtered = *odom_f_msg ;
 
 	m_syncdataPub.publish(m_comp_metadata);
 
