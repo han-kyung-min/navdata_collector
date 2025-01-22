@@ -218,7 +218,7 @@ bool NavDataCollector::waitForRGBDMetadata( )
 
 	while (true)
 	{
-		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_odom_topic, m_nh, ros::Duration(1.0) )  )
+		if( ros::topic::waitForMessage<nav_msgs::Odometry>(mstr_odom_topic, m_nh, ros::Duration(1.0) )  )
 		{
 			ROS_INFO("got %s msg \n", mstr_odom_topic.c_str());
 			break ;
@@ -229,7 +229,7 @@ bool NavDataCollector::waitForRGBDMetadata( )
 
 	while (true)
 	{
-		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_odom_filtered_topic, m_nh, ros::Duration(1.0) )  )
+		if( ros::topic::waitForMessage<nav_msgs::Odometry>(mstr_odom_filtered_topic, m_nh, ros::Duration(1.0) )  )
 		{
 			ROS_INFO("got %s msg \n", mstr_odom_filtered_topic.c_str());
 			break ;
@@ -304,7 +304,7 @@ bool NavDataCollector::waitForCompMetadata( )
 
 	while (true)
 	{
-		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_odom_topic, m_nh, ros::Duration(1.0) )  )
+		if( ros::topic::waitForMessage<nav_msgs::Odometry>(mstr_odom_topic, m_nh, ros::Duration(1.0) )  )
 		{
 			ROS_INFO("got %s msg \n", mstr_odom_topic.c_str());
 			break ;
@@ -315,7 +315,7 @@ bool NavDataCollector::waitForCompMetadata( )
 
 	while (true)
 	{
-		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_odom_filtered_topic, m_nh, ros::Duration(1.0) )  )
+		if( ros::topic::waitForMessage<nav_msgs::Odometry>(mstr_odom_filtered_topic, m_nh, ros::Duration(1.0) )  )
 		{
 			ROS_INFO("got %s msg \n", mstr_odom_filtered_topic.c_str());
 			break ;
