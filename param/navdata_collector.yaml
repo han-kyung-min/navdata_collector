@@ -5,16 +5,18 @@ navdata_collector:
     rgb_topic:          "/camera/color/image_rect_color"  # former rgb topic   
     depth_topic:        "/camera/depth/image_rect_raw"  # former depth topic
     robotpose_topic:    "base_pose"
-    twist_topic:       "/former_base_controller/cmd_vel"
+    odom_topic:         "/former_base_controller/odom"
+    odom_filt_topic:    "/odometry/filtered"
+    twist_topic:        "/former_base_controller/cmd_vel"
     twiststamped_topic: "robot_twist_stamped"
     scan_topic:         "scan"
     map_topic:          "map"
     metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
-    bagfile_root_path:  "/media/results/navdata_collector"
+    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
     
-    max_nav_time:       3600 # seconds
-    max_num_bagfiles:   1000
+    max_nav_time:       1200 #3600 # seconds
+    max_num_bagfiles:   500
     
     global_width:       2048
     global_height:      2048

@@ -12,3 +12,10 @@ local_costmap:
   height: 3
   resolution: 0.05
   
+  plugins: 
+    - {name: static_map,    type: "costmap_2d::StaticLayer"}            
+    - {name: obstacle_layer,    type: "costmap_2d::ObstacleLayer"}
+    - {name: inflation_layer, type: "costmap_2d::InflationLayer"}
+  
+  always_send_full_costmap: True
+  
