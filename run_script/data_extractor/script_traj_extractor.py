@@ -39,6 +39,7 @@ def main(argv):
     # viewing
     traj_idx = 0
     for traj in trajs:
+        rgb_img_path    = '%s/%s/'
         map_img_path    = '%s/%s/map'  % (root_dir, traj)
         scan_path       = '%s/%s/scan' % (root_dir, traj)
         pose_path       = '%s/%s/pose' % (root_dir, traj)

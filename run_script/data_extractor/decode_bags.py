@@ -21,7 +21,7 @@ from sensor_msgs.msg import LaserScan
 from sensor_msgs.msg import Image
 
 from std_msgs.msg import Bool
-from scan_data_handler import scan_data_handler
+from comp_data_handler import comp_data_handler
 
 #import cv2
 import roslaunch
@@ -43,7 +43,7 @@ def main(argv):
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
 
-    data_handler = scan_data_handler(name='scan_data_handler', bagfile_path=bagfile_path, **config)
+    data_handler = comp_data_handler(name='comp_data_handler', bagfile_path=bagfile_path, **config)
 
     data_handler.runExtractor()
 

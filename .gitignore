@@ -17,5 +17,6 @@
 .settings
 .cproject
 /Debug/
+run_script/data_extractor/__pycache__/
 
 .idea
