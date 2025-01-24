@@ -13,7 +13,7 @@ using namespace navdata_collector;
 
 int main(int argc, char** argv)
 {
-	ros::init(argc, argv, "navdata_collector");
+	ros::init(argc, argv, "robot_publisher");
 	const ros::NodeHandle nh;
 	const ros::NodeHandle private_nh("~");
 

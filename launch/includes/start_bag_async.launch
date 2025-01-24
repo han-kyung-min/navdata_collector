@@ -1,0 +1,46 @@
+<!-- -->
+<launch>
+
+    <rosparam command="load" file="$(find navdata_collector)/param/navdata_collector.yaml"/>
+    <arg name="bagfile_path" default="/media/results/navdata_collector"/>
+    <arg name="record_cameras" default="true" />
+    <arg name="rviz_config" value ="$(find navdata_collector)/launch/includes/rviz_config/nav_collector.rviz"/>
+    <arg name="navdata_collector_is_initialized" default="false"/>
+    
+    <node name="img_throttler" type="throttle" pkg="topic_tools" args="messages /camera/color/image_raw/compressed 10 /camera/color/image_throttle/compressed" />
+
+    <node name="depth_throttler" type="throttle" pkg="topic_tools" args="messages /camera/depth/image_raw/compressed 10 /camera/color/image_throttle/compressed" />
+
+    <node pkg="rosbag" type="record" name="rosbag_record_cam" 
+    args="-o $(arg bagfile_path)/bag subset_topics
+
+/camera/color/image_throttle/compressed
+/former_base_controller/cmd_vel
+/former_base_controller/odom
+/former_base_controller/parameter_descriptions
+/former_base_controller/parameter_updates
+/scan
+/move_base/cmd_vel
+/teleop/cmd_vel
+/imu/data
+/imu/rpy
+/joint_states
+/joy
+/joy/set_feedback
+/odometry/filtered
+/rosout
+/rosout_agg
+/tf
+/tf_static
+/robot_footprints
+/robot_path
+
+/move_base/goal
+/move_base/NavfnROS/plan
+/move_base/global_costmap/costmap
+/move_base/local_costmap/costmap
+/map
+    "
+    />
+
+</launch>

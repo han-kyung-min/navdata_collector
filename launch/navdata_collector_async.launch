@@ -1,0 +1,8 @@
+<!-- -->
+<launch>
+
+    <node pkg="navdata_collector" type="robot_publisher_node" name="robot_publisher" output="screen"/>
+    <node pkg="navdata_collector" type="path_generator_node" name="path_generator" output="screen"/>
+    <node pkg="navdata_collector" type="viz_helper_node" name="viz_helper" output="screen"/>
+
+</launch>

@@ -23,7 +23,7 @@ mn_globalmap_width(2048), mn_globalmap_height(2048)
 {
 // params
 	m_nh.getParam("/navdata_collector/debug_data_save_path", mstr_debugpath);
-	m_nh.param("/navdata_collector/max_nav_time", mn_max_nav_time, 3600); // in sec
+	m_nh.param("/navdata_collector/max_nav_time", mn_max_nav_time, mn_max_nav_time); // in sec
 	m_nh.param("/navdata_collector/global_width", mn_globalmap_width, 2048) ;
 	m_nh.param("/navdata_collector/global_height",mn_globalmap_height,2048) ;
 	m_nh.param("/navdata_collector/occupancy_thr", mn_occupancy_thr, mn_occupancy_thr);
@@ -158,7 +158,7 @@ void PathGenerator::doneCB( const actionlib::SimpleClientGoalState& state )
     if (m_move_client.getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
     {
          // do something as goal was reached
-    	ROS_INFO("Touch down  \n");
+    	ROS_DEBUG("Touch down  \n");
 		{
 			const std::unique_lock<mutex> lock(mutex_robot_state) ;
 			me_robotstate = ROBOT_STATE::ROBOT_IS_NOT_MOVING ;
@@ -194,7 +194,7 @@ void PathGenerator::moveRobotCallback(const geometry_msgs::PoseWithCovarianceSta
 {
 // call actionlib
 // robot is ready to move
-	ROS_INFO("@moveRobotCallback Robot is < %s > \n ",  robot_state[me_robotstate+1] );
+	ROS_DEBUG("@moveRobotCallback Robot is < %s > \n ",  robot_state[me_robotstate+1] );
 
 	if( me_robotstate >= ROBOT_STATE::FORCE_TO_STOP   )
 		return;
@@ -205,7 +205,7 @@ void PathGenerator::moveRobotCallback(const geometry_msgs::PoseWithCovarianceSta
 		me_robotstate = ROBOT_STATE::ROBOT_IS_MOVING ;
 	}
 
-	ROS_INFO("@moveRobotCallback received a plan\n");
+ROS_DEBUG("@moveRobotCallback received a plan\n");
 
 	move_base_msgs::MoveBaseGoal goal;
 	goal.target_pose.header.frame_id = mstr_worldframe_id; //m_baseFrameId ;
@@ -217,29 +217,29 @@ void PathGenerator::moveRobotCallback(const geometry_msgs::PoseWithCovarianceSta
 	goal.target_pose.pose.position.y = goalpose.pose.pose.position.y ;
 	goal.target_pose.pose.orientation.w = goalpose.pose.pose.orientation.w ;
 
-	ROS_INFO("curr robot pose is @              <%f %f> \n", m_rpos_world.pose.position.x, m_rpos_world.pose.position.y );
-	ROS_INFO("new destination target is set to  <%f %f> \n", goal.target_pose.pose.position.x, goal.target_pose.pose.position.y );
+ROS_DEBUG("curr robot pose is @              <%f %f> \n", m_rpos_world.pose.position.x, m_rpos_world.pose.position.y );
+ROS_DEBUG("new destination target is set to  <%f %f> \n", goal.target_pose.pose.position.x, goal.target_pose.pose.position.y );
 
 	// publish goal to Rviz
 	//m_VizHelper.publishGoalPointMarker( goalpose.pose );
 
 // inspect the path
 ////////////////////////////////////////////////////////////////////////////////////////////
-ROS_INFO("+++++++++++++++++++++++++ @moveRobotCallback, sending a goal +++++++++++++++++++++++++++++++++++++\n");
+ROS_DEBUG("+++++++++++++++++++++++++ @moveRobotCallback, sending a goal +++++++++++++++++++++++++++++++++++++\n");
 
 // publish departure flag
 	std_msgs::Bool bflag_true ;
 	bflag_true.data = true ;
 	m_departureFlagPub.publish(bflag_true) ;
 	m_move_client.sendGoal(goal, boost::bind(&PathGenerator::doneCB, this, _1), SimpleMoveBaseClient::SimpleActiveCallback() ) ;
-ROS_INFO("+++++++++++++++++++++++++ @moveRobotCallback, a goal is sent +++++++++++++++++++++++++++++++++++++\n");
+ROS_DEBUG("+++++++++++++++++++++++++ @moveRobotCallback, a goal is sent +++++++++++++++++++++++++++++++++++++\n");
 	m_move_client.waitForResult();
-ROS_INFO("+++++++++++++++++++++++++ @moveRobotCallback, Nav to goal is completed   +++++++++++++++++++++++++\n");
+ROS_DEBUG("+++++++++++++++++++++++++ @moveRobotCallback, Nav to goal is completed   +++++++++++++++++++++++++\n");
 
 	std_msgs::Bool bflag_false ;
 	bflag_false.data = false ;
 	m_departureFlagPub.publish(bflag_false) ;
-ROS_INFO("@PathGenerator  sent FALSE depart msg \n");
+ROS_DEBUG("@PathGenerator  sent FALSE depart msg \n");
 // publish result flag
 
 }
@@ -293,7 +293,7 @@ int PathGenerator::sampleNextGoal( const cv::Mat& costmap_img, const cv::Point& 
 	double fdist2target_sq = 	(double)( nrx - nsampled_tx ) *  (double)( nrx - nsampled_tx ) +
 								(double)( nry - nsampled_ty ) *  (double)( nry - nsampled_ty ) ;
 	double fdist2target = std::sqrt(  fdist2target_sq  ) ;
-	ROS_INFO("Sampled a new goal @(%f %f) of cost < %d > which is < %f > away from the robot \n",
+	ROS_DEBUG("Sampled a new goal @(%f %f) of cost < %d > which is < %f > away from the robot \n",
 			targetgoal_gm.x, targetgoal_gm.y, costmap_img.data[nsampleidx], fdist2target);
 
 	return 1 ;
@@ -365,7 +365,7 @@ void PathGenerator::mapdataCallback(const nav_msgs::OccupancyGrid::ConstPtr& msg
 		return;
 	}
 
-ROS_INFO("********** \t start mapdata callback routine \t ********** \n");
+ROS_DEBUG("********** \t start mapdata callback routine \t ********** \n");
 ros::WallTime	mapCallStartTime = ros::WallTime::now();
 mn_tot_nav_time = static_cast<int>(ros::Time::now().sec) - mn_start_nav_time;
 
@@ -510,14 +510,14 @@ mn_tot_nav_time = static_cast<int>(ros::Time::now().sec) - mn_start_nav_time;
 
 	ros::WallTime mapCallEndTime = ros::WallTime::now();
 	double mapcallback_time = (mapCallEndTime - mapCallStartTime).toNSec() * 1e-6;
-	ROS_INFO("\n "
+ROS_DEBUG("\n "
 			 " ********************************************************************************************* \n "
 			 "     mapDataCallback exec time (ms): %f \n "
 			 " ********************************************************************************************* \n "
 			, mapcallback_time);
 
-	ROS_INFO("\n********** End of mapdata callback routine \t ********** \n");
-	ROS_INFO("Tot nav time spent %d (s)\n", mn_tot_nav_time);
+ROS_DEBUG("\n********** End of mapdata callback routine \t ********** \n");
+ROS_INFO("Tot nav time spent %d (s) max nav time: %d \n", mn_tot_nav_time, mn_max_nav_time);
 
 		//saveDNNData( img_frontiers_offset, start, best_goal, best_plan, ROI_OFFSET, roi ) ;
 

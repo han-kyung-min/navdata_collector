@@ -194,6 +194,7 @@ set_target_properties( navdata_collector PROPERTIES
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/navdata_collector_node.cpp)
 
+add_executable(robot_publisher_node nodes/robot_publisher_node.cpp)
 add_executable(navdata_collector_node nodes/navdata_collector_node.cpp)
 add_executable(path_generator_node nodes/path_generator_node.cpp)
 add_executable(scan2ptcloud_node nodes/scan_to_ptcloud_node.cpp)
@@ -201,6 +202,7 @@ add_executable(viz_helper_node nodes/viz_helper_node.cpp)
 
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+target_link_libraries(robot_publisher_node navdata_collector)
 target_link_libraries(navdata_collector_node navdata_collector)
 target_link_libraries(path_generator_node navdata_collector)
 target_link_libraries(scan2ptcloud_node navdata_collector)
@@ -241,7 +243,7 @@ target_link_libraries(viz_helper_node navdata_collector)
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
 
-install(TARGETS navdata_collector_node path_generator_node scan2ptcloud_node viz_helper_node
+install(TARGETS navdata_collector_node path_generator_node scan2ptcloud_node viz_helper_node robot_publisher_node
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
