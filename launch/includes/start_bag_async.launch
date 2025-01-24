@@ -7,14 +7,18 @@
     <arg name="rviz_config" value ="$(find navdata_collector)/launch/includes/rviz_config/nav_collector.rviz"/>
     <arg name="navdata_collector_is_initialized" default="false"/>
     
-    <node name="img_throttler" type="throttle" pkg="topic_tools" args="messages /camera/color/image_raw/compressed 10 /camera/color/image_throttle/compressed" />
+    <!--node name="img_throttler" type="throttle" pkg="topic_tools" args="messages /camera/color/image_raw/compressed 10 /camera/color/image_throttle/compressed" />
+    <node name="depth_throttler" type="throttle" pkg="topic_tools" args="messages /camera/depth/image_rect_raw/compressed 10 /camera/depth/depth_throttle/compressed" /-->
 
-    <node name="depth_throttler" type="throttle" pkg="topic_tools" args="messages /camera/depth/image_raw/compressed 10 /camera/color/image_throttle/compressed" />
+    <node name="img_throttler" type="throttle" pkg="topic_tools" args="messages /camera/color/image_raw 10 /camera/color/image_throttle/image_raw" />
+    <node name="depth_throttler" type="throttle" pkg="topic_tools" args="messages /camera/depth/image_rect_raw 10 /camera/depth/depth_throttle/depth_raw" />
 
+    
     <node pkg="rosbag" type="record" name="rosbag_record_cam" 
     args="-o $(arg bagfile_path)/bag subset_topics
 
-/camera/color/image_throttle/compressed
+/camera/color/image_throttle/image_raw
+/camera/depth/depth_throttle/depth_raw
 /former_base_controller/cmd_vel
 /former_base_controller/odom
 /former_base_controller/parameter_descriptions

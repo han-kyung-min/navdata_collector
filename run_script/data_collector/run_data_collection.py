@@ -99,7 +99,7 @@ def main(argv):
         print("starting launch 2 \n")
         launch2.start()
 
-    data2 = rospy.wait_for_message('/data_collection_is_completed', Bool, timeout=4800)
+    data2 = rospy.wait_for_message('/data_collection_is_completed', Bool, timeout=7200)
     if data2.data:
         print("Got data_collection_is_completed MSG \n")
         launch1.shutdown()

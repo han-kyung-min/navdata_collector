@@ -3,7 +3,7 @@ navdata_collector:
     world_frame_id:     "map"
     base_frame_id:      "base_link"
     rgb_topic:          "/camera/color/image_raw"  # former rgb topic   
-    depth_topic:        "/camera/depth/image_raw"  # former depth topic
+    depth_topic:        "/camera/depth/image_rect_raw"  # former depth topic
     robotpose_topic:    "base_pose"
     odom_topic:         "/former_base_controller/odom"
     odom_filt_topic:    "/odometry/filtered"
@@ -16,7 +16,7 @@ navdata_collector:
     #bagfile_root_path:  "/media/results/navdata_collector"
     bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
     
-    max_nav_time:       1200 #3600 # seconds
+    max_nav_time:       2400 #3600 # seconds
     max_num_bagfiles:   500
     
     global_width:       2048
