@@ -37,6 +37,7 @@
 
 /former_base_controller/odom
 /base_pose
+/curr_goal_marker
 /odometry/filtered
 /move_base/cmd_vel
 /teleop/cmd_vel
