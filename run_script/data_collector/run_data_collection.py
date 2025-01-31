@@ -5,11 +5,11 @@ import yaml
 import datetime
 import shutil
 import numpy as np
-
 import rospy
-import rosbag
+from pathlib import Path
 import tf2_ros
 import tf
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 
 from move_base_msgs.msg import MoveBaseActionGoal
 from navdata_collector.msg import scan_metadata
@@ -24,38 +24,17 @@ from std_msgs.msg import Bool
 #import cv2
 import roslaunch
 
-# _init = False
-# _done = False
-# launch1 = []
-# launch2 = []
-# def navdata_start_cb(msg):
-#     print("\n got START msg \n")
-#     global launch2
-#     if msg.data:
-#        launch2.start()
-#        print("launch 2 is up \n")
-#     else:
-#        print("nav collector is down \n")
-#
-# def navdata_finish_cb(msg):
-#     global launch1
-#     global launch2
-#     if msg.data is True:
-#         launch1.shutdown()
-#         launch2.shutdown()
-#         print("Terminating launch1 and launch2 \n")
-#     else:
-#         print("something wrong ... \n")
-#
-# def goal_cb(msg):
-#     print("got a new goal msg \n")
-#     print(msg.goal.target_pose)
+def pose_cb(msg):
+    global launch1
+    global launch2
+    if msg.data is True:
+        launch1.shutdown()
+        launch2.shutdown()
+        print("Terminating launch1 and launch2 \n")
+    else:
+        print("something wrong ... \n")
 
 def main(argv):
-    # global _init
-    # global _done
-    # global launch1
-    # global launch2
 
     rospy.init_node('navdata_collector_launcher', anonymous=True)
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
@@ -77,7 +56,7 @@ def main(argv):
     os.mkdir(bagfile_path)
 
     roslaunch.configure_logging(uuid)
-    launch1 = roslaunch.parent.ROSLaunchParent(uuid, ['%s/launch/navdata_collector_async.launch'%(base_dir)])
+    launch1 = roslaunch.parent.ROSLaunchParent(uuid, ['%s/launch/auto_collector_async.launch'%(base_dir)])
 
     cli_arg2 = ['%s/launch/includes/start_bag_async.launch'%base_dir, 'bagfile_path:=%s'%bagfile_path]
     roslaunch_args = cli_arg2[1:]

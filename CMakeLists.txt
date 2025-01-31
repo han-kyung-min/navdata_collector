@@ -199,6 +199,7 @@ add_executable(navdata_collector_node nodes/navdata_collector_node.cpp)
 add_executable(path_generator_node nodes/path_generator_node.cpp)
 add_executable(scan2ptcloud_node nodes/scan_to_ptcloud_node.cpp)
 add_executable(viz_helper_node nodes/viz_helper_node.cpp)
+#add_executable(slam_publisher_node nodes/slam_publisher_node.py)
 
 add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
@@ -242,6 +243,9 @@ target_link_libraries(viz_helper_node navdata_collector)
 # install(TARGETS ${PROJECT_NAME}_node
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
+
+catkin_install_python(PROGRAMS nodes/slam_publisher_node.py
+                        DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS navdata_collector_node path_generator_node scan2ptcloud_node viz_helper_node robot_publisher_node
     RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

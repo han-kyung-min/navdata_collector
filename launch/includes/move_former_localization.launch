@@ -1,0 +1,13 @@
+<!-- move base -->
+<launch>
+
+  <master auto="start"/>
+
+  <include file="$(find navdata_collector)/launch/includes/move_former.launch">
+  </include>
+  
+  <include file="$(find navdata_collector)/launch/includes/start_localization.launch">
+  </include>
+  
+  
+</launch>

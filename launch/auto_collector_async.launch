@@ -1,5 +1,8 @@
 <!-- -->
 <launch>
+  <!-- Logger config -->
+    <env name="ROSCONSOLE_CONFIG_FILE"
+        value="$(find navdata_collector)/config/custom_rosconsole.config"/>
 
     <node pkg="navdata_collector" type="robot_publisher_node" name="robot_publisher" output="screen"/>
     <node pkg="navdata_collector" type="path_generator_node" name="path_generator" output="screen"/>

@@ -19,25 +19,29 @@
 
 /camera/color/image_throttle/image_raw
 /camera/depth/depth_throttle/depth_raw
-/former_base_controller/cmd_vel
-/former_base_controller/odom
 /former_base_controller/parameter_descriptions
 /former_base_controller/parameter_updates
 /scan
-/move_base/cmd_vel
-/teleop/cmd_vel
+
 /imu/data
 /imu/rpy
 /joint_states
 /joy
 /joy/set_feedback
-/odometry/filtered
 /rosout
 /rosout_agg
 /tf
 /tf_static
 /robot_footprints
 /robot_path
+
+/former_base_controller/odom
+/base_pose
+/odometry/filtered
+/move_base/cmd_vel
+/teleop/cmd_vel
+/robot_twist_stamped
+/former_base_controller/cmd_vel
 
 /move_base/goal
 /move_base/NavfnROS/plan
