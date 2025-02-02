@@ -2,7 +2,7 @@
 <launch>
 
   <!-- start SLAM -->
-  <node pkg="slam_toolbox" type="lifelong_slam_toolbox_node" name="slam_toolbox" output="screen">
+  <node pkg="slam_toolbox" type="lifelong_slam_toolbox_node" name="slam_toolbox">  <!--output="screen"-->
       <!--remap from="/scan"  to="/base_scan"/-->
       <rosparam command="delete" param="/slam_toolbox/map_file_name"/>
       <rosparam command="delete" param="/slam_toolbox/map_start_pose"/>

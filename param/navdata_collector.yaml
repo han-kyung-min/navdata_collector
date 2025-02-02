@@ -16,8 +16,8 @@ navdata_collector:
     bagfile_root_path:  "/media/results/navdata_collector"
     #bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
     
-    max_nav_time:       2400 #3600 # seconds
-    max_num_bagfiles:   500
+    max_nav_time:       3600 # seconds
+    max_num_bagfiles:   12 #24
     
     global_width:       2048
     global_height:      2048
