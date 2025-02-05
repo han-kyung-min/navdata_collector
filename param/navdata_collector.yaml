@@ -13,8 +13,8 @@ navdata_collector:
     map_topic:          "map"
     metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
-    bagfile_root_path:  "/media/results/navdata_collector"
-    #bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
+    #bagfile_root_path:  "/media/results/navdata_collector"
+    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
     
     max_nav_time:       3600 # seconds
     max_num_bagfiles:   12 #24

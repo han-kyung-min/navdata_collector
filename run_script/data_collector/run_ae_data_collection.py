@@ -47,8 +47,8 @@ def main(argv):
 
         # launch files
         roslaunch.configure_logging(uuid)
-        launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/hankm/catkin_ws/src/navdata_collector/launch/includes/move_former_slam.launch"])
-        launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/hankm/catkin_ws/src/autoexplorer/launch/autoexplorer.launch"])
+        launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/glab/catkin_ws/src/autoexplorer/launch/includes/move_former_teb.launch"])
+        launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/glab/catkin_ws/src/autoexplorer/launch/autoexplorer.launch"])
 
         cli_arg3 = ['%s/launch/includes/start_bag_async.launch' % base_dir, 'bagfile_path:=%s' % bagfile_path]
         roslaunch_args = cli_arg3[1:]
