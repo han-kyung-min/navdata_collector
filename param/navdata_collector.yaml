@@ -22,6 +22,14 @@ navdata_collector:
     global_width:       2048
     global_height:      2048
     
-#bagfile_decoder:
+navdata_extractor:
+    inpath:             "/media/results/navdata_collector/former29/2025-02-08-14-20"
+    outpath:            "/media/results/navdata_collector/processed"
+    rgb_topic:          "/camera/color/image_throttle/image_raw"
+    depth_topic:        "/camera/depth/depth_throttle/depth_raw"
+    scan_topic:         "/scan"
+    cmdvel_topic:       "/former_base_controller/cmd_vel"
+    odom_topic:         "/former_base_controller/odom"
+    odom_filt_topic:    "/odometry/filtered"   
+    map_topic:          "/map"
     
-    #outpath:      "/media/results/navdata_collector/decoded_bags"

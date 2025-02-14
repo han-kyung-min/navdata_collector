@@ -49,11 +49,12 @@ def main(argv):
         roslaunch.configure_logging(uuid)
         launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/hankm/catkin_ws/src/navdata_collector/launch/includes/move_former_slam.launch"])
         launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/hankm/catkin_ws/src/autoexplorer/launch/autoexplorer.launch"])
+        launch3 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/hankm/catkin_ws/src/auto_collector_async.launch"])
 
-        cli_arg3 = ['%s/launch/includes/start_bag_async.launch' % base_dir, 'bagfile_path:=%s' % bagfile_path]
-        roslaunch_args = cli_arg3[1:]
-        roslaunch_file3 = [(roslaunch.rlutil.resolve_launch_arguments(cli_arg3)[0], roslaunch_args)]
-        launch3 = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file3)
+        cli_arg4 = ['%s/launch/includes/start_bag_async.launch' % base_dir, 'bagfile_path:=%s' % bagfile_path]
+        roslaunch_args = cli_arg4[1:]
+        roslaunch_file4 = [(roslaunch.rlutil.resolve_launch_arguments(cli_arg4)[0], roslaunch_args)]
+        launch4 = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file4)
 
         launch1.start()
         print(" <%d> th  move base & SLAM toolbox are up \n"%round_idx)
@@ -62,10 +63,11 @@ def main(argv):
         (trans, rot) = listener.lookupTransform("odom", "base_link", t)
 
         launch2.start()
+        launch3.start()
         time.sleep(1)
         rospy.wait_for_message('map', nav_msgs.msg.OccupancyGrid, timeout=None)
         print("Got a map msg \n")
-        launch3.start()
+        launch4.start()
         print("<%d>th Bagging started \n"%round_idx )
         while not rospy.is_shutdown():
             data = rospy.wait_for_message('exploration_is_done', Bool, timeout=None)
@@ -74,6 +76,7 @@ def main(argv):
                 break
         print("<%d> th exploration is done. Closing the exploration service \n"%round_idx)
 
+        launch4.shutdown()
         launch3.shutdown()
         launch2.shutdown()
         launch1.shutdown()
