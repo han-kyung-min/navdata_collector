@@ -10,7 +10,7 @@ config = ReadYaml(config_file) ;
 % str_split = split(inpath, '/') ;
 % navtime_id = str_split{end} ;
 % 
-% 
+% extraction_dir = sprintf('%s/%s',base_sync_metadata_dir, navtime_id ) ;
 % 
 % mydir = dir(extraction_dir) ;
 % 
@@ -18,12 +18,11 @@ config = ReadYaml(config_file) ;
 % metadata_dirs = dir( extracted_dir ) ;
 % bag_id = metadata_dirs(3).name ;
 
-inpath_splits = split(config.navdata_extractor.inpath, '/') ;
-navtime_id = inpath_splits{end}  ;
-extraction_dir = sprintf('%s/%s',base_sync_metadata_dir, navtime_id ) ;
-processed_bags = dir(extraction_dir) ;
-procssed_bag_id = processed_bags(3).name ;
-sync_metadata_dir = sprintf('/media/results/navdata_collector/processed/%s/%s/synced',navtime_id, procssed_bag_id) ;
+inpath_splits = split(config.navdata_extractor.inpath) ;
+inpa
+
+%sync_metadata_dir = '/media/results/navdata_collector/processed/2025-02-08-14-20/bag_2025-02-08-14-21-03/synced'
+sync_metadata_dir = '/media/results/navdata_collector/processed/2025-02-27-14-58/bag_2025-02-27-14-58-28/synced'
 
 odom = load(sprintf("%s/sync_odom.txt", sync_metadata_dir)) ;
 [num_data, c] = size(odom) ;
@@ -51,7 +50,7 @@ theta0 = orient(3)  ;
 vidfile = VideoWriter('/home/hankm/Desktop/bag_sample.mp4') ;
 %open(vidfile) ;
 
-for idx=1:num_data-1
+for idx=1:num_data
 
     fig; clf;
     rgbimg = imread( sprintf('%s/rgb%05d.png',sync_metadata_dir, idx-1) ) ;
@@ -62,7 +61,7 @@ for idx=1:num_data-1
     depthimg_enhanced = imadjust( double( depthimg ) / 255 ) ;
 
     % draw odom
-    pose7 = odom(idx,5:11) ;
+    pose7 = odom(idx+1,5:11) ;
     orient = quat2eul( pose7(4:end) ) ;
     px = pose7(1);
     py = pose7(2); 

@@ -28,13 +28,14 @@ from tqdm import trange
 class bag_extractor():
     def __init__(self, name, **kwargs):
         self.name = name
-        self.rgb_topic      = kwargs['navdata_extractor']['rgb_topic']
-        self.depth_topic    = kwargs['navdata_extractor']['depth_topic']
+        #self.rgb_topic      = kwargs['navdata_extractor']['rgb_topic']
+        #self.depth_topic    = kwargs['navdata_extractor']['depth_topic']
         self.scan_topic     = kwargs['navdata_extractor']['scan_topic']
-        self.cmdvel_topic   = kwargs['navdata_extractor']['cmdvel_topic']
         self.odom_topic     = kwargs['navdata_extractor']['odom_topic']
         self.odom_filt_topic= kwargs['navdata_extractor']['odom_filt_topic']
         self.slam_pose_topic= kwargs['navdata_collector']['robotpose_topic']
+        self.rgbd_topic     = kwargs['navdata_extractor']['rgbd_topic']
+        self.twiststamped_topic    = kwargs['navdata_extractor']['twiststamped_topic']
 
         self.bagfile_path   = kwargs['navdata_extractor']['inpath']  #bagfile_path   # source dir
         self.base_extraction_path   = kwargs['navdata_extractor']['outpath']
@@ -64,6 +65,51 @@ class bag_extractor():
         f.write("scan_info.txt  contains:       idx, rmin(m), rmax(m), ang_min, ang_max, ang_inc(rad), seq, time(s), time(ns) \n")
         f.write("odom contains (pose, twist):   idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw, vx, vy, vz, wx, wy, wz \n")
         f.write("odom_filt data contains:       idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw, vx, vy, vz, wx, wy, wz \n")
+
+    def extractRGBD(self, bag, out_rgb_path, out_depth_path):
+        cv_bridge = CvBridge()
+        cnt = 0
+        max_timediff_ms = 0
+        sum_timediff_ms = 0
+        depth_info_file = "%s/depth_info.txt" % out_depth_path
+        rgb_info_file = "%s/rgb_info.txt" % out_rgb_path
+        f_rgb = open(rgb_info_file, 'w')
+        f_depth = open(depth_info_file, 'w')
+        with tqdm(total=bag.get_message_count(self.rgbd_topic), position=0, leave=True) as pbar:
+            for topic, msg, t in bag.read_messages(topics=[self.rgbd_topic]):
+                pbar.update(1)
+                # print("Size of the image: W {} x H {}".format(msg.width, msg.height))
+                # print("Encoding of the frames: {}".format(msg.encoding))
+                # sys.stdout.write('\r' + ('.' * cnt) + ' ')
+                # sys.stdout.flush()
+                # write info
+                rgb_msg = msg.rgb
+                depth_msg = msg.depth
+
+                time_diff_ms = msg.timediff_ms.data
+                sum_timediff_ms += time_diff_ms
+                if(time_diff_ms > max_timediff_ms):
+                    max_timediff_ms = time_diff_ms
+                # process rgb
+                f_rgb.write("%d %d %d " % (cnt, rgb_msg.height, rgb_msg.width))
+                f_rgb.write("%d %d %d\n" % (rgb_msg.header.seq, rgb_msg.header.stamp.secs, rgb_msg.header.stamp.nsecs))
+                cv_rgb = cv_bridge.imgmsg_to_cv2(img_msg=rgb_msg, desired_encoding="bgr8")
+                rgb_file = "%s/%05d.png" % (out_rgb_path, cnt)
+                cv2.imwrite(rgb_file, cv_rgb)
+
+                # process depth
+                f_depth.write("%d %d %d " % (cnt, depth_msg.height, depth_msg.width))
+                f_depth.write("%d %d %d\n" % (depth_msg.header.seq, depth_msg.header.stamp.secs, depth_msg.header.stamp.nsecs))
+                cv_depth = cv_bridge.imgmsg_to_cv2(img_msg=depth_msg, desired_encoding="passthrough")
+                depth_file = "%s/%05d.png" % (out_depth_path, cnt)
+                cv2.imwrite(depth_file, cv_depth)
+
+                cnt += 1
+
+        f_rgb.close()
+        f_depth.close()
+        print("\n avg rgb-d time diff: < %f > \n max rgb-d time diff: < %f >\n" % (sum_timediff_ms / cnt, max_timediff_ms) )
+
     def extractRGB(self, bag, out_rgb_path ):
         cv_bridge = CvBridge()
         cnt = 0
@@ -175,6 +221,25 @@ class bag_extractor():
                 cnt += 1
             f.close()
 
+    def extractTwistStamped(self, bag, out_traj_path):
+        cnt = 0
+        twist_file = "%s/twist.txt" % out_traj_path
+        f = open(twist_file, 'w')
+        with tqdm(total=bag.get_message_count(self.twiststamped_topic)) as pbar:
+            for topic, msg, t in bag.read_messages(topics=[self.twiststamped_topic]):
+                # print("intensities {}".format(msg.intensities))
+                # print("Encoding of the frames: {}".format(msg.encoding))
+                pbar.update(1)
+                linear = msg.twist.linear
+                angular = msg.twist.angular
+
+                # write info
+                f.write("%d %d %d %d " % (cnt, msg.header.seq, msg.header.stamp.secs, msg.header.stamp.nsecs))
+                f.write("%f %f %f " % (linear.x, linear.y, linear.z))
+                f.write("%f %f %f \n" % (angular.x, angular.y, angular.z))
+                cnt += 1
+            f.close()
+
     def runExtractor(self ):
         # for bagfile in bagfiles:
         #     # rosbag play each file then dump files into the dest folder
@@ -211,17 +276,20 @@ class bag_extractor():
                 os.mkdir(out_rgb_path)
                 os.mkdir(out_scan_path)
 
-                print("extracting rgb of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
-                self.extractRGB(self.bag, out_rgb_path)
-                print("\r extracting depth of <%d> th bag: %s"% (bag_idx, bagfile_time_str))
-                self.extractDepth(self.bag, out_depth_path)
+                # print("extracting rgb of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
+                # self.extractRGB(self.bag, out_rgb_path)
+                # print("\r extracting depth of <%d> th bag: %s"% (bag_idx, bagfile_time_str))
+                # self.extractDepth(self.bag, out_depth_path)
+                print("extracting rgb-d of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
+                self.extractRGBD(self.bag, out_rgb_path, out_depth_path)
                 print("\r extracting scan of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractScan(self.bag, out_scan_path)
                 print("\r extracting odom of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractOdom(self.bag, out_traj_path)
                 print("\r extracting odom_filtered of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractOdomFilt(self.bag, out_traj_path)
-
+                print("\r extracting cmd_vel(twist_stamped) <%d> th bag: %s"%(bag_idx, bagfile_time_str) )
+                self.extractTwistStamped(self.bag,out_traj_path)
         # slam pose, twist, etc
             #TODO
             # extractSLAMPose()

@@ -24,12 +24,13 @@ navdata_collector:
     global_height:      2048
     
 navdata_extractor:
-    inpath:             "/media/results/navdata_collector/former29/2025-02-08-14-20"
+    inpath:             "/media/results/navdata_collector/former28/2025-02-27-14-58"
     outpath:            "/media/results/navdata_collector/processed"
-    rgb_topic:          "/camera/color/image_throttle/image_raw"
-    depth_topic:        "/camera/depth/depth_throttle/depth_raw"
+    #rgb_topic:          "/camera/color/image_throttle/image_raw"
+    #depth_topic:        "/camera/depth/depth_throttle/depth_raw"
+    rgbd_topic:         "/rgbd_throttle/rgbd_raw"
     scan_topic:         "/scan"
-    cmdvel_topic:       "/former_base_controller/cmd_vel"
+    twiststamped_topic: "/robot_twist_stamped"
     odom_topic:         "/former_base_controller/odom"
     odom_filt_topic:    "/odometry/filtered"   
     map_topic:          "/map"

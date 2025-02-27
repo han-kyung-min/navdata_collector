@@ -67,10 +67,72 @@ def match_rgb_depth_odom( rgb_info, depth_info, odom, my_time_diff = 0.1):
         msg = "warning: |depth_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, rgb_depth_matching_warn)
         print('\033[33m' + msg + '\33[0m')
     print("******************************************************************************************************************* \n")
-    print("rgb & depth time diff report (ms):  min: %f \t max: %f \t avg: %f \n"% (np.min(rgbd_time_diffs)*1000, np.max(rgbd_time_diffs)*1000, np.mean(rgbd_time_diffs)*1000 ) )
-    print("rgb & odom time diff report (ms):   min: %f \t max: %f \t avg: %f \n"% (np.min(rgb_odom_time_diffs)*1000, np.max(rgb_odom_time_diffs)*1000, np.mean(rgb_odom_time_diffs)*1000 ) )
+    print("rgb & depth time diff report (ms):  min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgbd_time_diffs)*1000, np.max(rgbd_time_diffs)*1000, np.mean(rgbd_time_diffs)*1000 ) )
+    print("rgb & odom time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_odom_time_diffs)*1000, np.max(rgb_odom_time_diffs)*1000, np.mean(rgb_odom_time_diffs)*1000 ) )
     print("******************************************************************************************************************* \n")
     return corr_table
+
+
+def match_rgb_depth_twist( rgb_info, depth_info, twist_stamped, my_time_diff = 0.1):
+    # rgb_size = len(rgb_info)
+    # corr_table = np.zeros( [rgb_size, 3], dtype=np.uint )  # rgb, depth, odom
+    # rgb_depth_matching_warn = 0
+    # rgb_odom_matching_warn = 0
+    # rgbd_time_diffs = np.zeros( [rgb_size,1] )
+    # rgb_odom_time_diffs = np.zeros( [rgb_size,1] )
+    #
+    # for rgb_idx in range(0, rgb_size):
+    #     rgb_s = rgb_info[rgb_idx,4]
+    #     rgb_ns= rgb_info[rgb_idx,5]
+    #     rgb_time = rgb_s + rgb_ns / 10 ** 9
+    #
+    #     # find the assoicated depth data
+    #     depth_secs = depth_info[:,4]
+    #     depth_nsecs= depth_info[:,5] / 10 ** 9
+    #     depth_time_all = depth_secs + depth_nsecs
+    #
+    #     depth_rgb_time_diff = abs( depth_time_all - rgb_time )
+    #     idx = np.where( depth_rgb_time_diff == np.min(depth_rgb_time_diff) )[0]
+    #     matching_depth_idx = idx[0]
+    #     rgbd_time_diffs[rgb_idx] = np.min(depth_rgb_time_diff)
+    #
+    #     if( np.min(depth_rgb_time_diff) > my_time_diff ):
+    #         msg = "warning: @ rgb_idx <%d> min depth and rgb time diff is greator than %f (ms) \n"% (rgb_idx, my_time_diff * 1000)
+    #         print('\033[33m' + msg + '\33[0m')
+    #         rgb_depth_matching_warn += 1
+    #
+    #     # find the associated odom data
+    #     odom_secs = odom[:,2]
+    #     odom_nsecs = odom[:,3] / 10 ** 9
+    #     odom_time_all = odom_secs + odom_nsecs
+    #     odom_rgb_time_diff = abs( odom_time_all - rgb_time )
+    #     idx = np.where( odom_rgb_time_diff == np.min(odom_rgb_time_diff) )[0]
+    #     matching_odom_idx = idx[0]
+    #     rgb_odom_time_diffs[rgb_idx] = np.min(odom_rgb_time_diff)
+    #
+    #     rgbd_time_diffs
+    #
+    #     if( np.min(odom_rgb_time_diff) > my_time_diff ):
+    #         msg = "warning: @ rgb_idx <%d> min odom and rgb time diff is greator than %f (ms) \n" % (rgb_idx, my_time_diff * 1000)
+    #         warnings.warn( msg )
+    #         print('\033[33m' + msg + '\33[0m')
+    #         rgb_odom_matching_warn += 1
+    #
+    #     corr_table[rgb_idx] = [rgb_idx, matching_depth_idx, matching_odom_idx]
+    #
+    # if( rgb_odom_matching_warn > 0):
+    #     msg = "warning: |odom_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, rgb_odom_matching_warn)
+    #     print('\033[33m' + msg + '\33[0m')
+    #
+    # if( rgb_depth_matching_warn > 0):
+    #     msg = "warning: |depth_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, rgb_depth_matching_warn)
+    #     print('\033[33m' + msg + '\33[0m')
+    # print("******************************************************************************************************************* \n")
+    # print("rgb & depth time diff report (ms):  min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgbd_time_diffs)*1000, np.max(rgbd_time_diffs)*1000, np.mean(rgbd_time_diffs)*1000 ) )
+    # print("rgb & odom time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_odom_time_diffs)*1000, np.max(rgb_odom_time_diffs)*1000, np.mean(rgb_odom_time_diffs)*1000 ) )
+    # print("******************************************************************************************************************* \n")
+    # return corr_table
+
 
 def match_rgb_scan_odom( rgb_info, scan_info, odom, my_time_diff = 0.1):
     # my_time_diff unit is < sec > )
@@ -133,8 +195,8 @@ def match_rgb_scan_odom( rgb_info, scan_info, odom, my_time_diff = 0.1):
         print('\033[33m' + msg + '\33[0m')
 
     print("******************************************************************************************************************* \n")
-    print("rgb & scan time diff report (ms):  min: %f \t max: %f \t avg: %f \n"% (np.min(rgb_scan_dt)*1000, np.max(rgb_scan_dt)*1000, np.mean(rgb_scan_dt)*1000 ) )
-    print("rgb & odom time diff report (ms):   min: %f \t max: %f \t avg: %f \n"% (np.min(rgb_odom_dt)*1000, np.max(rgb_odom_dt)*1000, np.mean(rgb_odom_dt)*1000 ) )
+    print("rgb & scan time diff report (ms):  min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_scan_dt)*1000, np.max(rgb_scan_dt)*1000, np.mean(rgb_scan_dt)*1000 ) )
+    print("rgb & odom time diff report (ms):  min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_odom_dt)*1000, np.max(rgb_odom_dt)*1000, np.mean(rgb_odom_dt)*1000 ) )
     print("******************************************************************************************************************* \n")
     return corr_table
 
