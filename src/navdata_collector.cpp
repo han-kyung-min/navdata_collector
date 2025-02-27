@@ -182,14 +182,15 @@ void NavDataCollector::publishRobotPose()
 
 void NavDataCollector::RGBDCallBack( const sensor_msgs::ImageConstPtr& rgb_msg, const sensor_msgs::ImageConstPtr& depth_msg)
 {
-	double rgb_time = static_cast<double>( (*rgb_msg).header.stamp.sec ) + static_cast<double>( (*rgb_msg).header.stamp.nsec ) * 10e-9   ;
-	double depth_time = static_cast<double>( (*depth_msg).header.stamp.sec ) + static_cast<double>( (*depth_msg).header.stamp.nsec ) * 10e-9   ;
-	double ftimediff = fabs( rgb_time - depth_time) ;
+	double rgb_time_ms = static_cast<double>( (*rgb_msg).header.stamp.sec * 1000 ) + static_cast<double>( (*rgb_msg).header.stamp.nsec ) * 10e-6   ;
+	double depth_time_ms = static_cast<double>( (*depth_msg).header.stamp.sec * 1000 ) + static_cast<double>( (*depth_msg).header.stamp.nsec ) * 10e-6   ;
+	double ftimediff_ms = fabs( rgb_time_ms - depth_time_ms ) ;
 
-	ROS_INFO("RGBD msg is set @ timediff: %f (s)\n", ftimediff );
+	//ROS_INFO("RGBD msg is set @ timediff: %f (s)\n", ftimediff_ms );
 	m_rgbd.header 	= (*rgb_msg).header ;
 	m_rgbd.rgb 	= *rgb_msg ;
 	m_rgbd.depth	= *depth_msg;
+    m_rgbd.timediff_ms.data =  ftimediff_ms ;
 	m_syncdataPub.publish(m_rgbd);
 }
 

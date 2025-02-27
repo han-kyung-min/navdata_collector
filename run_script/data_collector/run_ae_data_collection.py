@@ -57,7 +57,8 @@ def main(argv):
         exit(-1)
     try:
         rospy.wait_for_message(config['navdata_collector']['rgb_topic'], sensor_msgs.msg.Image, timeout=5)
-        print("rgb is avaiable \n")
+        out_msg = "Got %s msg \n" % config['navdata_collector']['rgb_topic']
+        print('\033[32m' + out_msg + '\33[0m')
     except:
         out_msg = "It seems there is no %s msg ... Please check your system \n"%config['navdata_collector']['rgb_topic']
         print('\033[31m' + out_msg + '\33[0m')
@@ -66,7 +67,7 @@ def main(argv):
         rospy.wait_for_message(config['navdata_collector']['depth_topic'], sensor_msgs.msg.Image, timeout=5)
         print("got depth msgs ! \n")
     except:
-        out_msg = "It seems there is no %s msg ... Please check your system \n"%config['navdata_collector']['rgb_topic']
+        out_msg = "It seems there is no %s msg ... Please check your system \n"%config['navdata_collector']['depth_topic']
         print('\033[33m' + out_msg + '\33[0m')
         exit(-1)
 
