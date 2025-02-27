@@ -34,13 +34,14 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Int8.h>
 
-//#include "navdata_collector/comp_metadata.h"
+#include "navdata_collector/rgbd.h"
 #include <cstdarg>
 
 namespace navdata_collector
 {
 
 using namespace std;
+using namespace message_filters;
 
 typedef enum{	FREE 	= 0,
 				UNKNOWN	= 127,
@@ -58,12 +59,13 @@ public:
 
 	void twistReceiveCallBack( const geometry_msgs::TwistConstPtr& msg ) ;
 	void publishRobotPose(  ) ;
-	void publishRobotVel( );
+	//void publishRobotVel( );
 
 	void departFlagCallBack( const std_msgs::BoolConstPtr& depart_msg ) ;
 
 	bool waitForCompMetadata( ) ;
 
+	void RGBDCallBack( const sensor_msgs::ImageConstPtr& rgb_msg, const sensor_msgs::ImageConstPtr& depth_msg) ;
 	//void generateGridmapFromCostmap( );
 	inline bool isDone() const {  return ( mn_bagfile_cnt > mn_max_num_bagfiles || mb_navdata_collection_is_completed ); }
 
@@ -118,12 +120,22 @@ private:
 	ros::NodeHandle m_nh_private;
 	ros::Subscriber	m_robotPoseSub,  m_robotTwistSub, m_currGoalSub, m_doneSub  ;
 
+	navdata_collector::rgbd m_rgbd ;
+
+	typedef sync_policies::ApproximateTime
+			<sensor_msgs::Image, sensor_msgs::Image> ApproxRGBDTimeSyncPolicy;
+	typedef Synchronizer<ApproxRGBDTimeSyncPolicy> RGBD_Sync;
+	boost::shared_ptr<RGBD_Sync> m_rgbd_sync;
+	message_filters::Subscriber<sensor_msgs::Image> m_mf_rgbSub ;
+	message_filters::Subscriber<sensor_msgs::Image> m_mf_depthSub ;
+
 //	ros::Subscriber m_departmsgSub;
 	ros::Publisher m_robotposePub, m_robotVelPub ;
 	ros::Publisher m_initdonePub ;
+	ros::Publisher m_syncdataPub ;
 
 	string mstr_rgb_topic, mstr_depth_topic, mstr_scan_topic, mstr_map_topic, mstr_metadata_topic ;
-	string mstr_twist_topic, mstr_twiststamped_topic, mstr_robotpose_topic, mstr_odom_topic, mstr_odom_filtered_topic ;
+	string mstr_twist_topic, mstr_twiststamped_topic, mstr_robotpose_topic, mstr_odom_topic, mstr_odom_filtered_topic, mstr_rgbd_topic ;
 	string mstr_worldframe_id, mstr_robotframe_id ;
 
 	tf::TransformListener m_listener;

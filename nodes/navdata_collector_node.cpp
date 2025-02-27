@@ -27,7 +27,7 @@ int main(int argc, char** argv)
 	while( ros::ok() & !oDataCollector.isDone()  )
 	{
 		oDataCollector.publishRobotPose();
-		oDataCollector.publishRobotVel() ;
+		//oDataCollector.publishRobotVel() ;
 		ros::spinOnce();
 		rate.sleep() ;
 	}

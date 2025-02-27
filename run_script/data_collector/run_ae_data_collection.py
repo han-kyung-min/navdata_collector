@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 import nav_msgs.msg
+import sensor_msgs.msg
 import rospy
 import sys
 import os
@@ -42,14 +43,41 @@ def main(argv):
     start = time.time()
     num_explorations = config['navdata_collector']['max_num_bagfiles']
 
+    pkg_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../'))
+    catkin_dir = "%s/../"%pkg_dir
+
+    print("waiting for core msgs ...  \n")
+    try:
+        rospy.wait_for_message(config['navdata_collector']['odom_topic'], nav_msgs.msg.Odometry, timeout=2)
+        out_msg = "Got %s msg \n" % config['navdata_collector']['odom_topic']
+        print('\033[32m' + out_msg + '\33[0m')
+    except:
+        out_msg = "It seems there is no  %s msg ... Please check your system \n" % config['navdata_collector']['odom_topic']
+        print('\033[31m' + out_msg + '\33[0m')
+        exit(-1)
+    try:
+        rospy.wait_for_message(config['navdata_collector']['rgb_topic'], sensor_msgs.msg.Image, timeout=5)
+        print("rgb is avaiable \n")
+    except:
+        out_msg = "It seems there is no %s msg ... Please check your system \n"%config['navdata_collector']['rgb_topic']
+        print('\033[31m' + out_msg + '\33[0m')
+        exit(-1)
+    try:
+        rospy.wait_for_message(config['navdata_collector']['depth_topic'], sensor_msgs.msg.Image, timeout=5)
+        print("got depth msgs ! \n")
+    except:
+        out_msg = "It seems there is no %s msg ... Please check your system \n"%config['navdata_collector']['rgb_topic']
+        print('\033[33m' + out_msg + '\33[0m')
+        exit(-1)
+
     for round_idx in range(0, num_explorations):
         # make data dir
 
         # launch files
         roslaunch.configure_logging(uuid)
-        launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/hankm/catkin_ws/src/navdata_collector/launch/includes/move_former_slam.launch"])
-        launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/hankm/catkin_ws/src/autoexplorer/launch/autoexplorer.launch"])
-        launch3 = roslaunch.parent.ROSLaunchParent(uuid, ["/home/hankm/catkin_ws/src/auto_collector_async.launch"])
+        launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/includes/move_former_slam.launch"%pkg_dir])
+        launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/autoexplorer/launch/autoexplorer.launch"%catkin_dir])
+        launch3 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/auto_collector_async.launch"%pkg_dir])
 
         cli_arg4 = ['%s/launch/includes/start_bag_async.launch' % base_dir, 'bagfile_path:=%s' % bagfile_path]
         roslaunch_args = cli_arg4[1:]
