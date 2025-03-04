@@ -24,7 +24,7 @@ navdata_collector:
     global_height:      2048
     
 navdata_extractor:
-    inpath:             "/media/results/navdata_collector/former28/2025-02-27-14-58"
+    inpath:             "/media/results/navdata_collector/former29/2025-03-03-15-58"
     outpath:            "/media/results/navdata_collector/processed"
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/depth/depth_throttle/depth_raw"

@@ -108,7 +108,8 @@ class bag_extractor():
 
         f_rgb.close()
         f_depth.close()
-        print("\n avg rgb-d time diff: < %f > \n max rgb-d time diff: < %f >\n" % (sum_timediff_ms / cnt, max_timediff_ms) )
+        if cnt > 0:
+            print("\n avg rgb-d time diff: < %f > \n max rgb-d time diff: < %f >\n" % (sum_timediff_ms / cnt, max_timediff_ms) )
 
     def extractRGB(self, bag, out_rgb_path ):
         cv_bridge = CvBridge()

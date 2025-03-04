@@ -21,9 +21,15 @@ config = ReadYaml(config_file) ;
 inpath_splits = split(config.navdata_extractor.inpath, '/') ;
 navtime_id = inpath_splits{end}  ;
 extraction_dir = sprintf('%s/%s',base_sync_metadata_dir, navtime_id ) ;
-processed_bags = dir(extraction_dir) ;
-procssed_bag_id = processed_bags(3).name ;
-sync_metadata_dir = sprintf('/media/results/navdata_collector/processed/%s/%s/synced',navtime_id, procssed_bag_id) ;
+processed_bags_dir = dir(extraction_dir) ;
+procssed_bag_ids = {} ;
+cnt = 1;
+for idx=3:length(processed_bags_dir )
+    procssed_bag_ids{cnt} = processed_bags_dir(idx).name ;
+    cnt = cnt + 1;
+end
+
+sync_metadata_dir = sprintf('/media/results/navdata_collector/processed/%s/%s/synced',navtime_id, procssed_bag_ids{1}) ;
 
 odom = load(sprintf("%s/sync_odom.txt", sync_metadata_dir)) ;
 [num_data, c] = size(odom) ;
@@ -48,8 +54,9 @@ orient = quat2eul( odom(1, 8: 11) ) ;
 theta0 = orient(3)  ;
 [hx0, hy0] = pol2cart(theta0, 1) ;
 
-vidfile = VideoWriter('/home/hankm/Desktop/bag_sample.mp4') ;
-%open(vidfile) ;
+vidfile = VideoWriter('/home/hankm/Desktop/bag_sample') ;
+vidfile.FrameRate = 40;
+open(vidfile) ;
 
 for idx=1:num_data-1
 
@@ -100,8 +107,8 @@ for idx=1:num_data-1
     drawnow ;
     set(gcf,'Position',[100 100 1024 1024])
 
-    %F(idx) = getframe(gcf) ;
-    %writeVideo(vidfile, F(idx)) ;
+    F(idx) = getframe(gcf) ;
+    writeVideo(vidfile, F(idx)) ;
     pause (0.005) 
 end
 

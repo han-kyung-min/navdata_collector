@@ -74,6 +74,8 @@ def match_rgb_depth_odom( rgb_info, depth_info, odom, my_time_diff = 0.1):
 
 
 def match_rgb_depth_twist( rgb_info, depth_info, twist_stamped, my_time_diff = 0.1):
+    #TODO: need to implement this function
+    
     # rgb_size = len(rgb_info)
     # corr_table = np.zeros( [rgb_size, 3], dtype=np.uint )  # rgb, depth, odom
     # rgb_depth_matching_warn = 0
@@ -127,11 +129,11 @@ def match_rgb_depth_twist( rgb_info, depth_info, twist_stamped, my_time_diff = 0
     # if( rgb_depth_matching_warn > 0):
     #     msg = "warning: |depth_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, rgb_depth_matching_warn)
     #     print('\033[33m' + msg + '\33[0m')
-    # print("******************************************************************************************************************* \n")
-    # print("rgb & depth time diff report (ms):  min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgbd_time_diffs)*1000, np.max(rgbd_time_diffs)*1000, np.mean(rgbd_time_diffs)*1000 ) )
-    # print("rgb & odom time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_odom_time_diffs)*1000, np.max(rgb_odom_time_diffs)*1000, np.mean(rgb_odom_time_diffs)*1000 ) )
-    # print("******************************************************************************************************************* \n")
-    # return corr_table
+    print("******************************************************************************************************************* \n")
+    print("rgb & depth time diff report (ms):  min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgbd_time_diffs)*1000, np.max(rgbd_time_diffs)*1000, np.mean(rgbd_time_diffs)*1000 ) )
+    print("rgb & odom time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_odom_time_diffs)*1000, np.max(rgb_odom_time_diffs)*1000, np.mean(rgb_odom_time_diffs)*1000 ) )
+    print("******************************************************************************************************************* \n")
+    return corr_table
 
 
 def match_rgb_scan_odom( rgb_info, scan_info, odom, my_time_diff = 0.1):
