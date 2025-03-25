@@ -46,7 +46,8 @@ mb_navdata_collection_is_completed(false)
 
 	waitForCompMetadata( ) ;
 
-	m_rgbd_sync.reset(new RGBD_Sync(ApproxRGBDTimeSyncPolicy(10), m_mf_rgbSub, m_mf_depthSub) );
+	//TODO change approx time sync to exact time sync !!!
+	m_rgbd_sync.reset(new RGBD_Sync(ExactRGBDTimeSyncPolicy(10), m_mf_rgbSub, m_mf_depthSub) );
 	m_rgbd_sync->registerCallback(boost::bind(&NavDataCollector::RGBDCallBack, this, _1, _2));
 	m_syncdataPub	= m_nh.advertise<navdata_collector::rgbd>(mstr_rgbd_topic, 1);
 

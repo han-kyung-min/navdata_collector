@@ -34,7 +34,7 @@ class bag_extractor():
         self.odom_topic     = kwargs['navdata_extractor']['odom_topic']
         self.odom_filt_topic= kwargs['navdata_extractor']['odom_filt_topic']
         self.slam_pose_topic= kwargs['navdata_collector']['robotpose_topic']
-        self.rgbd_topic     = kwargs['navdata_extractor']['rgbd_topic']
+        #self.rgbd_topic     = kwargs['navdata_extractor']['rgbd_topic']
         self.twiststamped_topic    = kwargs['navdata_extractor']['twiststamped_topic']
 
         self.bagfile_path   = kwargs['navdata_extractor']['inpath']  #bagfile_path   # source dir

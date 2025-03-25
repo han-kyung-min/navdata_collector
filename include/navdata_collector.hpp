@@ -124,7 +124,10 @@ private:
 
 	typedef sync_policies::ApproximateTime
 			<sensor_msgs::Image, sensor_msgs::Image> ApproxRGBDTimeSyncPolicy;
-	typedef Synchronizer<ApproxRGBDTimeSyncPolicy> RGBD_Sync;
+	typedef sync_policies::ExactTime
+			<sensor_msgs::Image, sensor_msgs::Image> ExactRGBDTimeSyncPolicy;
+
+	typedef Synchronizer<ExactRGBDTimeSyncPolicy> RGBD_Sync;
 	boost::shared_ptr<RGBD_Sync> m_rgbd_sync;
 	message_filters::Subscriber<sensor_msgs::Image> m_mf_rgbSub ;
 	message_filters::Subscriber<sensor_msgs::Image> m_mf_depthSub ;
