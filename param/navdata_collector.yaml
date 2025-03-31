@@ -14,9 +14,9 @@ navdata_collector:
     map_topic:          "map"
     #metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
-    #bagfile_root_path:  "/media/results/navdata_collector"
-    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
-    
+    bagfile_root_path:  "/media/results/navdata_collector"
+    #bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
+
     max_nav_time:       3600 # seconds
     max_num_bagfiles:   12 #24
     
@@ -24,10 +24,11 @@ navdata_collector:
     global_height:      2048
     
 navdata_extractor:
-    inpath:             "/media/results/navdata_collector/former29/2025-03-03-15-58"
+    #inpath:             "/media/results/navdata_collector/former29/2025-03-03-15-58"
+    inpath:             "/media/results/navdata_collector/former28/2025-03-25-16-28"
     outpath:            "/media/results/navdata_collector/processed"
     rgb_topic:          "/camera/color/image_throttle/image_raw"
-    depth_topic:        "/camera/depth/depth_throttle/depth_raw"
+    depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"
     #rgbd_topic:         "/rgbd_throttle/rgbd_raw"
     scan_topic:         "/scan"
     twiststamped_topic: "/robot_twist_stamped"

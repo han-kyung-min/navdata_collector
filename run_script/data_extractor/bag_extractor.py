@@ -35,6 +35,8 @@ class bag_extractor():
         self.odom_filt_topic= kwargs['navdata_extractor']['odom_filt_topic']
         self.slam_pose_topic= kwargs['navdata_collector']['robotpose_topic']
         #self.rgbd_topic     = kwargs['navdata_extractor']['rgbd_topic']
+        self.rgb_topic      = kwargs['navdata_extractor']['rgb_topic']
+        self.depth_topic    = kwargs['navdata_extractor']['depth_topic']
         self.twiststamped_topic    = kwargs['navdata_extractor']['twiststamped_topic']
 
         self.bagfile_path   = kwargs['navdata_extractor']['inpath']  #bagfile_path   # source dir
@@ -130,6 +132,7 @@ class bag_extractor():
                 cv2.imwrite(rgb_file, cv_rgb)
                 cnt += 1
         f.close()
+        assert(cnt > 0 )
 
     def extractDepth(self, bag, out_depth_path ):
         cv_bridge = CvBridge()
@@ -152,6 +155,7 @@ class bag_extractor():
                 cv2.imwrite(depth_file, cv_depth)
                 cnt += 1
         f.close()
+        assert(cnt > 0 )
 
     def extractScan(self, bag, out_scan_path):
         cnt = 0
@@ -276,13 +280,12 @@ class bag_extractor():
                 os.mkdir(out_depth_path)
                 os.mkdir(out_rgb_path)
                 os.mkdir(out_scan_path)
-
-                # print("extracting rgb of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
-                # self.extractRGB(self.bag, out_rgb_path)
-                # print("\r extracting depth of <%d> th bag: %s"% (bag_idx, bagfile_time_str))
-                # self.extractDepth(self.bag, out_depth_path)
-                print("extracting rgb-d of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
-                self.extractRGBD(self.bag, out_rgb_path, out_depth_path)
+                
+                #self.extractRGBD(self.bag, out_rgb_path, out_depth_path)
+                print("extracting rgb of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
+                self.extractRGB(self.bag, out_rgb_path)
+                print("extracting depth of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
+                self.extractDepth(self.bag, out_depth_path)
                 print("\r extracting scan of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractScan(self.bag, out_scan_path)
                 print("\r extracting odom of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )

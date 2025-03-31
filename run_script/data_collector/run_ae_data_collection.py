@@ -71,6 +71,8 @@ def main(argv):
         print('\033[33m' + out_msg + '\33[0m')
         exit(-1)
 
+    out_msg = "I found all core msgs "
+    print('\033[32m' + out_msg + '\33[0m')
     for round_idx in range(0, num_explorations):
         # make data dir
 
