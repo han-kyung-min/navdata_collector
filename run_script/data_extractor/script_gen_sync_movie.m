@@ -48,9 +48,9 @@ t = tiledlayout("horizontal",'TileSpacing','Compact','Padding','Compact');
 xy = zeros(num_data, 2) ;
 
 
-% vidfile = VideoWriter('/home/hankm/Desktop/bag_sample') ;
-% vidfile.FrameRate = 40;
-% open(vidfile) ;
+vidfile = VideoWriter('/home/hankm/Desktop/bag_sample') ;
+vidfile.FrameRate = 40;
+open(vidfile) ;
 
 % init pose
 px0 = odom(1,5) ;
@@ -95,39 +95,39 @@ for idx=1 : num_data-1
     twist = odom(idx+1, 12:end) ;
     xy(idx,:) = [px, py] ;
 
-    %fig; clf;
+    fig; clf;
+    nexttile
+    imshow(rgbimg) ; title('RGB') ;
+
+    nexttile
+    imshow(depthimg / 255) ; title('Depth raw (0~255 recaled)') ;
+
+    nexttile
+    imshow(depthimg_enhanced) ; title('Depth enhanced') ;
+
+    nexttile
+    plot(xy(1:idx,1), xy(1:idx,2), 'r.') ; hold on;
+    plot(px, py, 'oc', 'markersize', 10, 'MarkerFaceColor','c' ) ;
+    [hx, hy] = pol2cart(theta, 1) ;
+    quiver( px0, py0, hx0*2, hy0*2,'AutoScale','off', 'Color', [0,1,0], 'LineWidth',2, 'MaxHeadSize',8) ;
+    quiver( px, py, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',8) ;
+    quiver( px, py, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',8) ; 
+    grid on; axis equal;  axis([px_min-11 px_max+11 py_min-1 py_max+1]); hold off;
+    title('Odom pose and traj')
+
     % nexttile
-    % imshow(rgbimg) ; title('RGB') ;
-    % 
-    % nexttile
-    % imshow(depthimg / 255) ; title('Depth raw (0~255 recaled)') ;
-    % 
-    % nexttile
-    % imshow(depthimg_enhanced) ; title('Depth enhanced') ;
-    % 
-    % nexttile
-    % plot(xy(1:idx,1), xy(1:idx,2), 'r.') ; hold on;
-    % plot(px, py, 'oc', 'markersize', 10, 'MarkerFaceColor','c' ) ;
-    % [hx, hy] = pol2cart(theta, 1) ;
-    % quiver( px0, py0, hx0*2, hy0*2,'AutoScale','off', 'Color', [0,1,0], 'LineWidth',2, 'MaxHeadSize',8) ;
-    % quiver( px, py, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',8) ;
+    % [vx, vy] = pol2cart(twist(end), abs(twist(end))) ;
+    % plot(px, py, 'oc', 'markersize', 10, 'MarkerFaceColor','c' ) ; hold on;
     % quiver( px, py, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',8) ; 
-    % grid on; axis equal;  axis([px_min-11 px_max+11 py_min-1 py_max+1]); hold off;
-    % title('Odom pose and traj')
+    % quiver( px, py, vx, vy,'AutoScale','off', 'Color', [1,0,1], 'LineWidth',4, 'MaxHeadSize',8) ; 
+    % grid on; axis equal;  axis([px-3 px+3 py-3 py+3]); hold off ;
+    % title('Heading Dir') ;
 
-    % % nexttile
-    % % [vx, vy] = pol2cart(twist(end), abs(twist(end))) ;
-    % % plot(px, py, 'oc', 'markersize', 10, 'MarkerFaceColor','c' ) ; hold on;
-    % % quiver( px, py, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',8) ; 
-    % % quiver( px, py, vx, vy,'AutoScale','off', 'Color', [1,0,1], 'LineWidth',4, 'MaxHeadSize',8) ; 
-    % % grid on; axis equal;  axis([px-3 px+3 py-3 py+3]); hold off ;
-    % % title('Heading Dir') ;
-
-    %drawnow ;
-    %set(gcf,'Position',[100 100 1024 1024])
-    % F(idx) = getframe(gcf) ;
-    % writeVideo(vidfile, F(idx)) ;
-    % pause (0.005) 
+    drawnow ;
+    set(gcf,'Position',[100 100 1024 1024])
+    F(idx) = getframe(gcf) ;
+    writeVideo(vidfile, F(idx)) ;
+    pause (0.005) 
    
     wHr = xyzypr_to_htm([px, py, 0, orient]) ;
 
