@@ -4,7 +4,7 @@ navdata_collector:
     base_frame_id:      "base_link"
     rgb_topic:          "/camera/color/image_raw"  # former rgb topic   
     depth_topic:        "/camera/aligned_depth_to_color/image_raw" #"/camera/depth/image_rect_raw"  # former depth topic
-    #rgbd_topic:         "rgbd"
+    rgbd_topic:         "navdata_collector/rgbd"
     robotpose_topic:    "base_pose"                 # base slam pose
     odom_topic:         "/former_base_controller/odom"
     odom_filt_topic:    "/odometry/filtered"
@@ -14,8 +14,8 @@ navdata_collector:
     map_topic:          "map"
     #metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
-    bagfile_root_path:  "/media/results/navdata_collector"
-    #bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
+    #bagfile_root_path:  "/media/results/navdata_collector"
+    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
 
     max_nav_time:       3600 # seconds
     max_num_bagfiles:   12 #24
