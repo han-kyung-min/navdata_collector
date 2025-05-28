@@ -187,7 +187,14 @@ void NavDataCollector::RGBDCallBack( const sensor_msgs::ImageConstPtr& rgb_msg, 
 	double depth_time_ms = static_cast<double>( (*depth_msg).header.stamp.sec * 1000 ) + static_cast<double>( (*depth_msg).header.stamp.nsec ) * 10e-6   ;
 	double ftimediff_ms = fabs( rgb_time_ms - depth_time_ms ) ;
 
-	//ROS_INFO("RGBD msg is set @ timediff: %f (s)\n", ftimediff_ms );
+//ROS_INFO("RGBD msg is set @ timediff: %f (s)\n", ftimediff_ms );
+
+	if(ftimediff_ms > 1)
+	{
+		ROS_ERROR("RGBD msg is set @ timediff: %f (s)\n", ftimediff_ms );
+		return;
+	}
+
 	m_rgbd.header 	= (*rgb_msg).header ;
 	m_rgbd.rgb 	= *rgb_msg ;
 	m_rgbd.depth	= *depth_msg;
