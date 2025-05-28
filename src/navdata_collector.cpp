@@ -32,24 +32,25 @@ mb_navdata_collection_is_completed(false)
 	m_nh.param("/navdata_collector/rgbd_topic", mstr_rgbd_topic, string(""));
 
 	m_nh.getParam("/navdata_collector/bagfile_root_path", mstr_bagfile_path); // root file path
-
 	m_mf_rgbSub.subscribe(m_nh, mstr_rgb_topic, 1) ;
 	m_mf_depthSub.subscribe(m_nh, mstr_depth_topic, 1)  ;
 
 	m_doneSub			= m_nh.subscribe( "data_collection_is_completed", 1, &NavDataCollector::doneCallBack, this ) ;
 
 	m_initdonePub = m_nh.advertise<std_msgs::Bool>("navdata_collector_is_initialized", 1);
-
 	m_robotTwistSub = m_nh.subscribe(mstr_twist_topic, 1, &NavDataCollector::twistReceiveCallBack, this); // kmHan
 	m_robotposePub = m_nh.advertise<geometry_msgs::PoseStamped>(mstr_robotpose_topic, 1);
 	m_robotVelPub  = m_nh.advertise<geometry_msgs::TwistStamped>(mstr_twiststamped_topic, 1);
 
+ROS_INFO("Waiting for essential messages \n");
 	waitForCompMetadata( ) ;
+ROS_INFO("Got essential messages. Proceeding to the data collection process \n");
 
 	//TODO change approx time sync to exact time sync !!!
-	m_rgbd_sync.reset(new RGBD_Sync(ExactRGBDTimeSyncPolicy(10), m_mf_rgbSub, m_mf_depthSub) );
-	m_rgbd_sync->registerCallback(boost::bind(&NavDataCollector::RGBDCallBack, this, _1, _2));
-	m_syncdataPub	= m_nh.advertise<navdata_collector::rgbd>(mstr_rgbd_topic, 1);
+
+	//m_rgbd_sync.reset(new RGBD_Sync(ExactRGBDTimeSyncPolicy(10), m_mf_rgbSub, m_mf_depthSub) );
+	//m_rgbd_sync->registerCallback(boost::bind(&NavDataCollector::RGBDCallBack, this, _1, _2));
+	//m_syncdataPub	= m_nh.advertise<navdata_collector::rgbd>(mstr_rgbd_topic, 1);
 
 	std_msgs::Bool bmsg_ok ;
 	bmsg_ok.data = true ;
@@ -113,7 +114,7 @@ bool NavDataCollector::waitForCompMetadata( )
 		try{
 		  m_listener.lookupTransform(mstr_worldframe_id, mstr_robotframe_id,
 								   ros::Time(0), map2baselink);
-		  ROS_INFO("got pose tf msg \n");
+		  ROS_INFO("got pose tf (map_to_baselink) msg (%f, %f) \n", map2baselink.getOrigin().x(), map2baselink.getOrigin().y() );
 		  break ;
 		}
 		catch (tf::TransformException &ex) {
@@ -122,16 +123,16 @@ bool NavDataCollector::waitForCompMetadata( )
 		}
 	}
 
-//	while (true)
-//	{
-//		if( ros::topic::waitForMessage<nav_msgs::Odometry>(mstr_odom_topic, m_nh, ros::Duration(1.0) )  )
-//		{
-//			ROS_INFO("got %s msg \n", mstr_odom_topic.c_str());
-//			break ;
-//		}
-//		else
-//			ROS_WARN("Waitining for the %s msg \n", mstr_odom_topic.c_str());
-//	}
+	while (true)
+	{
+		if( ros::topic::waitForMessage<nav_msgs::Odometry>(mstr_odom_topic, m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("got %s msg \n", mstr_odom_topic.c_str());
+			break ;
+		}
+		else
+			ROS_WARN("Waitining for the %s msg \n", mstr_odom_topic.c_str());
+	}
 //
 //	while (true)
 //	{
@@ -187,7 +188,7 @@ void NavDataCollector::RGBDCallBack( const sensor_msgs::ImageConstPtr& rgb_msg, 
 	double depth_time_ms = static_cast<double>( (*depth_msg).header.stamp.sec * 1000 ) + static_cast<double>( (*depth_msg).header.stamp.nsec ) * 10e-6   ;
 	double ftimediff_ms = fabs( rgb_time_ms - depth_time_ms ) ;
 
-//ROS_INFO("RGBD msg is set @ timediff: %f (s)\n", ftimediff_ms );
+ROS_INFO("RGBD msg is set @ timediff: %f (s)\n", ftimediff_ms );
 
 	if(ftimediff_ms > 1)
 	{
