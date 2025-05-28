@@ -47,10 +47,11 @@ ROS_INFO("Waiting for essential messages \n");
 ROS_INFO("Got essential messages. Proceeding to the data collection process \n");
 
 	//TODO change approx time sync to exact time sync !!!
+	ROS_INFO("rgbd topic: %s \n", mstr_rgbd_topic.c_str());
 
-	//m_rgbd_sync.reset(new RGBD_Sync(ExactRGBDTimeSyncPolicy(10), m_mf_rgbSub, m_mf_depthSub) );
-	//m_rgbd_sync->registerCallback(boost::bind(&NavDataCollector::RGBDCallBack, this, _1, _2));
-	//m_syncdataPub	= m_nh.advertise<navdata_collector::rgbd>(mstr_rgbd_topic, 1);
+	m_syncdataPub	= m_nh.advertise<navdata_collector::rgbd>(mstr_rgbd_topic, 1);
+	m_rgbd_sync.reset(new RGBD_Sync(ExactRGBDTimeSyncPolicy(10), m_mf_rgbSub, m_mf_depthSub) );
+	m_rgbd_sync->registerCallback(boost::bind(&NavDataCollector::RGBDCallBack, this, _1, _2));
 
 	std_msgs::Bool bmsg_ok ;
 	bmsg_ok.data = true ;
@@ -64,27 +65,27 @@ NavDataCollector::~NavDataCollector()
 
 bool NavDataCollector::waitForCompMetadata( )
 {
-//	while (true)
-//	{
-//		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_rgb_topic, m_nh, ros::Duration(1.0) )  )
-//		{
-//			ROS_INFO("got %s msg \n", mstr_rgb_topic.c_str());
-//			break ;
-//		}
-//		else
-//			ROS_WARN("Waitining for the %s msg \n", mstr_rgb_topic.c_str());
-//	}
+	while (true)
+	{
+		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_rgb_topic, m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("got %s msg \n", mstr_rgb_topic.c_str());
+			break ;
+		}
+		else
+			ROS_WARN("Waitining for the %s msg \n", mstr_rgb_topic.c_str());
+	}
 ////
-//	while (true)
-//	{
-//		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_depth_topic, m_nh, ros::Duration(1.0) )  )
-//		{
-//			ROS_INFO("got %s msg \n", mstr_depth_topic.c_str());
-//			break ;
-//		}
-//		else
-//			ROS_WARN("Waitining for the %s msg \n", mstr_depth_topic.c_str());
-//	}
+	while (true)
+	{
+		if( ros::topic::waitForMessage<sensor_msgs::Image>(mstr_depth_topic, m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("got %s msg \n", mstr_depth_topic.c_str());
+			break ;
+		}
+		else
+			ROS_WARN("Waitining for the %s msg \n", mstr_depth_topic.c_str());
+	}
 
 	while (true)
 	{
@@ -134,16 +135,16 @@ bool NavDataCollector::waitForCompMetadata( )
 			ROS_WARN("Waitining for the %s msg \n", mstr_odom_topic.c_str());
 	}
 //
-//	while (true)
-//	{
-//		if( ros::topic::waitForMessage<nav_msgs::Odometry>(mstr_odom_filtered_topic, m_nh, ros::Duration(1.0) )  )
-//		{
-//			ROS_INFO("got %s msg \n", mstr_odom_filtered_topic.c_str());
-//			break ;
-//		}
-//		else
-//			ROS_WARN("Waitining for the %s msg \n", mstr_odom_filtered_topic.c_str());
-//	}
+	while (true)
+	{
+		if( ros::topic::waitForMessage<nav_msgs::Odometry>(mstr_odom_filtered_topic, m_nh, ros::Duration(1.0) )  )
+		{
+			ROS_INFO("got %s msg \n", mstr_odom_filtered_topic.c_str());
+			break ;
+		}
+		else
+			ROS_WARN("Waitining for the %s msg \n", mstr_odom_filtered_topic.c_str());
+	}
 
 	return true;
 }
@@ -188,11 +189,9 @@ void NavDataCollector::RGBDCallBack( const sensor_msgs::ImageConstPtr& rgb_msg, 
 	double depth_time_ms = static_cast<double>( (*depth_msg).header.stamp.sec * 1000 ) + static_cast<double>( (*depth_msg).header.stamp.nsec ) * 10e-6   ;
 	double ftimediff_ms = fabs( rgb_time_ms - depth_time_ms ) ;
 
-ROS_INFO("RGBD msg is set @ timediff: %f (s)\n", ftimediff_ms );
-
 	if(ftimediff_ms > 1)
 	{
-		ROS_ERROR("RGBD msg is set @ timediff: %f (s)\n", ftimediff_ms );
+		ROS_ERROR("RGB and Depth are not time synced: %f (ms) diff presents \n", ftimediff_ms );
 		return;
 	}
 

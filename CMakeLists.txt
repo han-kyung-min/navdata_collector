@@ -144,7 +144,7 @@ generate_messages(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES ${PROJECT_NAME}
-  CATKIN_DEPENDS std_msgs nav_msgs roscpp rospy geometry_msgs sensor_msgs costmap_2d move_base rosbag 
+  CATKIN_DEPENDS std_msgs nav_msgs roscpp rospy geometry_msgs sensor_msgs costmap_2d move_base rosbag message_runtime
   DEPENDS OpenCV  #OpenMP
 )
 
@@ -201,7 +201,11 @@ add_executable(viz_helper_node nodes/viz_helper_node.cpp)
 #add_executable(scan2ptcloud_node nodes/scan_to_ptcloud_node.cpp)
 #add_executable(slam_publisher_node nodes/slam_publisher_node.py)
 
-add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+add_dependencies(navdata_collector_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(path_generator_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(viz_helper_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 #target_link_libraries(robot_publisher_node navdata_collector)
 target_link_libraries(navdata_collector_node navdata_collector)

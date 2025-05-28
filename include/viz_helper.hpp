@@ -27,7 +27,7 @@
 #include "std_msgs/Header.h"
 #include "geometry_msgs/Point32.h"
 #include "std_msgs/Bool.h"
-#include "neuro_explorer/VizDataStamped.h"
+//#include "neuro_explorer/VizDataStamped.h"
 #include "nav_msgs/MapMetaData.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "geometry_msgs/Point.h"
