@@ -1,7 +1,7 @@
 
 % read yaml
-
-config_file = '/home/hankm/catkin_ws/src/navdata_collector/param/navdata_collector.yaml'
+base_dir = fileparts( fileparts(pwd) ) ;
+config_file = sprintf('%s/param/navdata_collector.yaml',base_dir);
 config = ReadYaml(config_file) ;
 
 inpath = config.navdata_extractor.inpath ;
@@ -29,7 +29,7 @@ for idx=3:length(processed_bags_dir )
     cnt = cnt + 1;
 end
 
-sync_metadata_dir = sprintf('/media/results/navdata_collector/processed/%s/%s/synced',navtime_id, procssed_bag_ids{1}) ;
+sync_metadata_dir = sprintf('%s/%s/%s/synced', base_sync_metadata_dir, navtime_id, procssed_bag_ids{1}) ;
 
 odom = load(sprintf("%s/sync_odom.txt", sync_metadata_dir)) ;
 [num_data, c] = size(odom) ;

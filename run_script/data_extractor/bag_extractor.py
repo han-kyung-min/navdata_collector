@@ -295,21 +295,21 @@ class bag_extractor():
                 os.mkdir(out_depth_path)
                 os.mkdir(out_rgb_path)
                 os.mkdir(out_scan_path)
-                
+
+                print("extracting rgb-d msgs from <%d> th bag"%(bag_idx))
                 self.extractRGBD(self.bag, out_rgb_path, out_depth_path)
-                print("extracting rgbd of <%d> th bag")
-                
+
                 #print("extracting rgb of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
                 #self.extractRGB(self.bag, out_rgb_path)
                 #print("extracting depth of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
                 #self.extractDepth(self.bag, out_depth_path)
-                print("\r extracting scan of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
+                print("\r extracting scan msgs from <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractScan(self.bag, out_scan_path)
-                print("\r extracting odom of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
+                print("\r extracting odom msgs from <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractOdom(self.bag, out_traj_path)
-                print("\r extracting odom_filtered of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
+                print("\r extracting odom_filtered msgs from <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractOdomFilt(self.bag, out_traj_path)
-                print("\r extracting cmd_vel(twist_stamped) <%d> th bag: %s"%(bag_idx, bagfile_time_str) )
+                print("\r extracting cmd_vel(twist_stamped) from <%d> th bag: %s"%(bag_idx, bagfile_time_str) )
                 self.extractTwistStamped(self.bag,out_traj_path)
         # slam pose, twist, etc
             #TODO
