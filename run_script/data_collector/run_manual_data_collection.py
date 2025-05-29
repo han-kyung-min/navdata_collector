@@ -44,6 +44,7 @@ def main(argv):
     
     num_explorations = config['navdata_collector']['max_num_bagfiles']
     max_time_per_round = config['navdata_collector']['max_time_per_round']
+    max_nav_time = config['navdata_collector']['max_nav_time']
 
     pkg_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../'))
     catkin_dir = "%s/../"%pkg_dir
@@ -115,7 +116,11 @@ def main(argv):
         launch3.shutdown()
         launch2.shutdown()
         launch1.shutdown()
-        #time.sleep(5)
+        time.sleep(5)
+
+        if(curr_time - start > max_nav_time):
+            print("Max nav time has been reached %d \n"%max_nav_time)
+            break
 
     print("The data collection process is completed \n")
     end = time.time()
