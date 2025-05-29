@@ -41,7 +41,9 @@ def main(argv):
     listener = tf.TransformListener()
     rate = rospy.Rate(10.0)
     start = time.time()
+    
     num_explorations = config['navdata_collector']['max_num_bagfiles']
+    max_time_per_round = config['navdata_collector']['max_time_per_round']
 
     pkg_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../'))
     catkin_dir = "%s/../"%pkg_dir
@@ -73,9 +75,11 @@ def main(argv):
 
     out_msg = "I found all core msgs "
     print('\033[32m' + out_msg + '\33[0m')
+    
+    last_time = start #time.time() 
+
     for round_idx in range(0, num_explorations):
         # make data dir
-
         # launch files
         roslaunch.configure_logging(uuid)
         launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/includes/move_former_slam.launch"%pkg_dir])
@@ -98,11 +102,14 @@ def main(argv):
         print("Got a map msg \n")
         launch3.start()
         print("<%d>th Bagging started \n"%round_idx )
-        while not rospy.is_shutdown():
-            data = rospy.wait_for_message('exploration_is_done', Bool, timeout=None)
-            print("exploration done? %d" % data.data)
-            if data.data is True:
+        
+        while True:
+            curr_time = time.time()
+            if( curr_time - last_time > max_time_per_round  ):
+                last_time = curr_time
+                print("This round reached the max time: <%d> "% max_time_per_round)
                 break
+            
         print("<%d> th exploration is done. Closing the exploration service \n"%round_idx)
 
         launch3.shutdown()
