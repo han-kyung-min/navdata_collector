@@ -25,11 +25,11 @@ navdata_collector:
     
 navdata_extractor:
     #inpath:             "/media/results/navdata_collector/former29/2025-03-03-15-58"
-    inpath:             "/media/results/navdata_collector/former28/2025-03-25-16-28"
+    inpath:             "/media/results/navdata_collector/former28/2025-05-28-16-25"
     outpath:            "/media/results/navdata_collector/processed"
-    rgb_topic:          "/camera/color/image_throttle/image_raw"
-    depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"
-    #rgbd_topic:         "/rgbd_throttle/rgbd_raw"
+    #rgb_topic:          "/camera/color/image_throttle/image_raw"
+    #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"
+    rgbd_topic:         "/rgbd_throttle/rgbd"
     scan_topic:         "/scan"
     twiststamped_topic: "/robot_twist_stamped"
     odom_topic:         "/former_base_controller/odom"

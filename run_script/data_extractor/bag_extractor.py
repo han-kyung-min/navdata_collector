@@ -34,9 +34,24 @@ class bag_extractor():
         self.odom_topic     = kwargs['navdata_extractor']['odom_topic']
         self.odom_filt_topic= kwargs['navdata_extractor']['odom_filt_topic']
         self.slam_pose_topic= kwargs['navdata_collector']['robotpose_topic']
-        #self.rgbd_topic     = kwargs['navdata_extractor']['rgbd_topic']
-        self.rgb_topic      = kwargs['navdata_extractor']['rgb_topic']
-        self.depth_topic    = kwargs['navdata_extractor']['depth_topic']
+        self.rgbd_topic = None
+        self.rgb_topic = None
+        self.depth_topic = None
+                
+        self.config_extractor = kwargs.get('navdata_extractor')
+        if isinstance(self.config_extractor, dict):
+            if 'rgbd_topic' in self.config_extractor:
+                self.rgbd_topic     = kwargs['navdata_extractor']['rgbd_topic']
+                print("we need to extract rgbd_topic: %s"%self.rgbd_topic)
+            elif 'rgb_topic' in self.config_extractor:
+                self.rgb_topic      = kwargs['navdata_extractor']['rgb_topic']
+                self.depth_topic    = kwargs['navdata_extractor']['depth_topic']
+                print("It is recommended to process RGB-D (combined) topic \n")
+                raise NotImplementedError
+            else:
+                print("unknown image type\n")
+                raise NotImplementedError
+        
         self.twiststamped_topic    = kwargs['navdata_extractor']['twiststamped_topic']
 
         self.bagfile_path   = kwargs['navdata_extractor']['inpath']  #bagfile_path   # source dir
@@ -281,11 +296,13 @@ class bag_extractor():
                 os.mkdir(out_rgb_path)
                 os.mkdir(out_scan_path)
                 
-                #self.extractRGBD(self.bag, out_rgb_path, out_depth_path)
-                print("extracting rgb of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
-                self.extractRGB(self.bag, out_rgb_path)
-                print("extracting depth of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
-                self.extractDepth(self.bag, out_depth_path)
+                self.extractRGBD(self.bag, out_rgb_path, out_depth_path)
+                print("extracting rgbd of <%d> th bag")
+                
+                #print("extracting rgb of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
+                #self.extractRGB(self.bag, out_rgb_path)
+                #print("extracting depth of <%d> th bag: %s"%(bag_idx, bagfile_time_str))
+                #self.extractDepth(self.bag, out_depth_path)
                 print("\r extracting scan of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractScan(self.bag, out_scan_path)
                 print("\r extracting odom of <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
