@@ -58,6 +58,15 @@ class bag_extractor():
         self.base_extraction_path   = kwargs['navdata_extractor']['outpath']
         self.navtime_id     = self.bagfile_path.split('/')[-1]
 
+        # fix the inactive bag if there is any.
+        active_bags = glob.glob('%s/*.bag.active' % self.bagfile_path)
+        for active_bag in active_bags:
+            print("\n fixing %s to a normal bag file \n"%active_bag)
+            targ_ = active_bag.split('.')
+            targ_bag = "".join(targ_[:-2])+".bag"
+            cmd = 'rosbag fix %s %s'%(active_bag, targ_bag)
+            os.system(cmd)
+
         self.bagfile_idx    = 0
         self.bagfiles       = glob.glob('%s/*.bag' % self.bagfile_path)
         self.bagfiles.sort()
