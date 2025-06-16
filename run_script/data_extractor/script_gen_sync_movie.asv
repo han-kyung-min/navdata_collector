@@ -43,7 +43,7 @@ py_max = max(odom(:,6)) ;
 % odom: idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw, vx, vy, vz, wx, wy, wz 
 
 fig = figure() ;
-fig.Position = [100 100 1024 1024]; %2048 2048];
+f.Position = [100 100 2048 2048];
 t = tiledlayout("horizontal",'TileSpacing','Compact','Padding','Compact'); 
 
 xy = zeros(num_data, 2) ;
@@ -69,7 +69,7 @@ depthimg = imread(sprintf('%s/depth%05d.png',sync_metadata_dir, idx-1) )  ;
 depthimg_enhanced = imadjust( double( depthimg ) / 65535 ) ;
 
 % draw odom
-pose7 = odom(1,5:11) ;
+pose7 = odom(idx,5:11) ;
 orient = quat2eul( pose7(4:end) ) ;
 px = pose7(1);
 py = pose7(2); 

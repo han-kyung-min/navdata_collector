@@ -54,8 +54,11 @@ wHr_prev = xyzypr_to_htm( [px,py,0,orient] ) ;
 vel_2d = zeros(num_data, 6) ;
 dth = zeros(1, num_data) ;
 quats = zeros(4, num_data) ;
+
+f = waitbar(0, 'Starting');
 for idx=1 : num_data-1
-    idx
+    %idx
+    waitbar(idx/(num_data-1), f, sprintf('Progress: %d %%', floor(idx/(num_data-1)*100)));
     rgbimg = imread( sprintf('%s/rgb%05d.png',sync_metadata_dir, idx-1) ) ;
     depthimg = imread(sprintf('%s/depth%05d.png',sync_metadata_dir, idx-1) )  ;
     
