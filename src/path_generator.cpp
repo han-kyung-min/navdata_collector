@@ -25,7 +25,7 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 The authors may be contacted via:
 
 
-Mail:        Kyung Min Han
+Mail:        Young J. Kim, Kyung Min Han
              Computer Graphics Lab                       
              Department of Computer Science and Engineering
              Ewha Womans University

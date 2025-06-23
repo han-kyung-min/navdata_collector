@@ -25,14 +25,12 @@ UPDATES, ENHANCEMENTS, OR MODIFICATIONS.
 The authors may be contacted via:
 
 
-Mail:        Kyung Min Han
+Mail:        Young J. Kim, Kyung Min Han
              Computer Graphics Lab                       
              Department of Computer Science and Engineering
              Ewha Womans University
              11-1 Daehyun-Dong Seodaemun-gu, Seoul, Korea 120-750
 
-
-Phone:       +82-2-3277-6798
 
 
 EMail:       hkm@ewha.ac.kr
