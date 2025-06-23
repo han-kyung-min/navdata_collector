@@ -12,8 +12,11 @@ import tf2_ros
 import tf
 import datetime
 import shutil
+
 from std_srvs.srv import Empty
 from std_msgs.msg import Bool
+from navdata_collector.msg import rgbd
+
 import roslaunch
 
 
@@ -21,8 +24,9 @@ def main(argv):
 
     base_dir = os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))))
     #    config_file = '/home/hankm/catkin_ws/src/navdata_collector/param/navdata_collector.yaml'
-    config_file = '%s/param/navdata_collector.yaml' % base_dir
+    pkg_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../'))
 
+    config_file = '%s/param/navdata_collector.yaml' % base_dir    
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
 
@@ -36,7 +40,7 @@ def main(argv):
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
     roslaunch.configure_logging(uuid)
 
-    rospy.init_node('ae_data_collector_launcher', anonymous=True)
+    rospy.init_node('manual_data_collector_launcher', anonymous=True)
 
     listener = tf.TransformListener()
     rate = rospy.Rate(10.0)
@@ -46,7 +50,6 @@ def main(argv):
     max_time_per_round = config['navdata_collector']['max_time_per_round']
     max_nav_time = config['navdata_collector']['max_nav_time']
 
-    pkg_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../'))
     catkin_dir = "%s/../"%pkg_dir
 
     print("waiting for core msgs ...  \n")
@@ -93,15 +96,19 @@ def main(argv):
 
         launch1.start()
         print(" <%d> th  move base & SLAM toolbox are up \n"%round_idx)
-        time.sleep(5)
+        rospy.wait_for_message('map', nav_msgs.msg.OccupancyGrid, timeout=None)
+        print("Got a map msg \n")
+        
         t = rospy.Time(0)
         (trans, rot) = listener.lookupTransform("odom", "base_link", t)
 
         launch2.start()
-        time.sleep(1)
-        rospy.wait_for_message('map', nav_msgs.msg.OccupancyGrid, timeout=None)
-        print("Got a map msg \n")
+        rospy.wait_for_message('navdata_collector_is_initialized', Bool, timeout=None)
+        print("navdata_collector_node is up \n")
+        
         launch3.start()
+        rgbd_msg = rospy.wait_for_message('rgbd_throttle/rgbd', rgbd, timeout=None)
+        
         print("<%d>th Bagging started \n"%round_idx )
         
         while True:
