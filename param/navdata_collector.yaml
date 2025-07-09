@@ -15,11 +15,11 @@ navdata_collector:
     #metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
     #bagfile_root_path:  "/media/results/navdata_collector"
-    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
+    bagfile_root_path:  "/media/glab/FetchSSD/results/colldata_collector"
 
-    max_time_per_round: 300  # seconds (5 mins)
+    max_time_per_round: 1800 # seconds (30 mins)
     max_nav_time:       3600 # seconds
-    max_num_bagfiles:   12 #24
+    max_num_bagfiles:   1    # collision detection mode.
     
     global_width:       2048
     global_height:      2048

@@ -74,8 +74,7 @@ find_package(OpenCV REQUIRED)
 add_message_files(
   FILES
   rgbd.msg
-  #scan_metadata.msg
-  #comp_metadata.msg
+  waypoint_stamped.msg
 )
 
 

@@ -53,6 +53,9 @@
 
 /move_base/goal
 /move_base/NavfnROS/plan
+
+/joy
+/waypoint
     "
     />
 
