@@ -54,8 +54,8 @@
 /move_base/goal
 /move_base/NavfnROS/plan
 
-/joy
 /waypoint
+/curr_rel_subgoal
     "
     />
 
