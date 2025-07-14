@@ -27,8 +27,8 @@ navdata_collector:
 navdata_extractor:
     #inpath:             "/media/results/navdata_collector/former28/2025-06-13-16-42"   # train
     #outpath:            "/media/results/navdata_collector/processed"                   # train
-    inpath:             "/media/results/navdata_collector/deployments/2025-06-13-16-42"         # deployment
-    outpath:            "/media/results/navdata_collector/deployments/processed"                # deployment
+    inpath:             "/media/results/navdata_collector/collision_data/2025-07-13-17-41"         # deployment
+    outpath:            "/media/results/navdata_collector/collision_data/processed"                # deployment
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"
     rgbd_topic:         "/rgbd_throttle/rgbd"
@@ -37,4 +37,9 @@ navdata_extractor:
     odom_topic:         "/former_base_controller/odom"
     odom_filt_topic:    "/odometry/filtered"   
     map_topic:          "/map"
+    
+colldata_extractor:
+    curr_rel_sg_topic:  "/curr_rel_subgoal"  # relative coord w.r.t base_link (It is the odom pose from topo map. NOT the predicted dist from the model)
+    waypoint_topic:     "/waypoint"          # relative coord w.r.t base_link
+    joy_topic:          "/joy"               # joy msg
     
