@@ -69,7 +69,7 @@ t = tiledlayout("horizontal",'TileSpacing','Compact','Padding','Compact');
 xy = zeros(num_data, 2) ;
 
 vidfile = VideoWriter('/home/hankm/Desktop/bag_colldata') ;
-vidfile.FrameRate = 40;
+vidfile.FrameRate = 10;
 open(vidfile) ;
 
 % init pose
@@ -91,11 +91,14 @@ depthimg_enhanced = imadjust( double( depthimg ) / 65535 ) ;
 % draw odom
 wHr_prev = xyzypr_to_htm( [px0, py0, 0, 0, 0, theta0] ) ;
 
-for idx=1 : num_data-1
+for idx=2800 : num_data-1
     idx
     rgbimg = imread( sprintf('%s/rgb%05d.png',sync_metadata_dir, idx-1) ) ;
     depthimg = imread(sprintf('%s/depth%05d.png',sync_metadata_dir, idx-1) )  ;
-    
+    scandata = load(sprintf('%s/scan%05d.txt', sync_metadata_dir, idx-1) ) ;
+    scan_range = scandata(:,2) ;
+    scan_angle = scandata(:,1) ;
+
     % normlize depth img
     depthimg_enhanced = imadjust( double( depthimg ) / 65535 ) ;
 
@@ -131,9 +134,9 @@ for idx=1 : num_data-1
     plot(xy(1:idx,1), xy(1:idx,2), 'r.') ; hold on;
 
     if (is_joy_on)
-        plot(px, py, 'oc', 'markersize', 10, 'MarkerFaceColor','r' ) ;
+        plot(px, py, 'oc', 'markersize', 12, 'MarkerFaceColor','r' ) ;
     else
-        plot(px, py, 'oc', 'markersize', 10, 'MarkerFaceColor','c' ) ;
+        plot(px, py, 'oc', 'markersize', 12, 'MarkerFaceColor','c' ) ;
     end
 
     [hx, hy] = pol2cart(theta, 1) ;
@@ -142,13 +145,13 @@ for idx=1 : num_data-1
     quiver( px, py, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',24) ; 
 
     % sg
-    plot( xy_sg(1)*10 + px, xy_sg(2)*10 + py, 'ms', 'MarkerSize',12, 'MarkerFaceColor', 'm') ;
+    plot( xy_sg(1)*12 + px, xy_sg(2)*12 + py, 'ms', 'MarkerSize',12, 'MarkerFaceColor', 'm') ;
 
     % wp
     if (is_joy_on)
-        plot( wps(:,1)*10 + px, wps(:,2)*10 + py, 'r.', 'MarkerSize', 8 ) ;
+        plot( wps(:,1)*12 + px, wps(:,2)*12 + py, 'r.', 'MarkerSize', 8 ) ;
     else
-        plot( wps(:,1)*10 + px, wps(:,2)*10 + py, 'g.', 'MarkerSize', 8 ) ;
+        plot( wps(:,1)*12 + px, wps(:,2)*12 + py, 'g.', 'MarkerSize', 8 ) ;
     end
 
     grid on; axis equal;  axis([px_min-11 px_max+11 py_min-11 py_max+11]); hold off;
@@ -156,39 +159,32 @@ for idx=1 : num_data-1
 
     % draw local
     nexttile
+
     if (is_joy_on)
-        plot(0, 0, 'oc', 'markersize', 10, 'MarkerFaceColor','r' ) ;
+        plot(0, 0, 'or', 'markersize', 10, 'MarkerEdgeColor','r', 'MarkerFaceColor', 'y', 'LineWidth', 2) ; hold on;
     else
         plot(0, 0, 'oc', 'markersize', 10, 'MarkerFaceColor','c' ) ; hold on;
     end
 
-    [hx, hy] = pol2cart(theta, 1) ;
+    [hx, hy] = pol2cart(0, 1) ;
     %quiver( 0, 0, hx0*2, hy0*2,'AutoScale','off', 'Color', [0,1,0], 'LineWidth',2, 'MaxHeadSize',32) ;
-    quiver( 0, 0, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',24) ;
-    quiver( 0, 0, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',24) ; 
+    quiver( 0, 0, hy, hx/64,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',8) ;
 
-    plot( xy_sg(1)*10, xy_sg(2)*10, 'ms', 'MarkerSize',12, 'MarkerFaceColor','m') ;
-
+    plot( xy_sg(2), xy_sg(1), 'ms', 'MarkerSize',12, 'MarkerFaceColor','m') ;
     % wp
 %    plot( wps(:,1)*40, wps(:,2)*40, 'g.', 'MarkerSize', 12 ) ;
 
     if (is_joy_on)
-        plot( wps(:,1)*20 , wps(:,2)*20 , 'r.', 'MarkerSize', 8 ) ;
+        plot( wps(:,2)*12 , wps(:,1)*12 , 'r.', 'MarkerSize', 8 ) ;
+        legend('robot', '', 'SG ', 'colliding wpts (x20)', 'Location','SE')
     else
-        plot( wps(:,1)*20 , wps(:,2)*20 , 'g.', 'MarkerSize', 8 ) ;
+        plot( wps(:,2)*12 , wps(:,1)*12 , 'g.', 'MarkerSize', 8 ) ;
+        legend('robot', '', 'SG ', 'wpts (x20)', 'Location','SE')
     end
 
-    grid on; axis equal;  axis([-5 +5 -5 +5]); hold off;
-    title('Odom pose and traj')
+    grid on; axis equal;  axis([-1 1 -1 1] * 0.75); hold off;
+    title( sprintf('Subgoal (SG) and waypoints (wpts) \n w.r.t base-link'))
 
-
-    % nexttile
-    % [vx, vy] = pol2cart(twist(end), abs(twist(end))) ;
-    % plot(px, py, 'oc', 'markersize', 10, 'MarkerFaceColor','c' ) ; hold on;
-    % quiver( px, py, hx, hy,'AutoScale','off', 'Color', [0,0,1], 'LineWidth',2, 'MaxHeadSize',8) ; 
-    % quiver( px, py, vx, vy,'AutoScale','off', 'Color', [1,0,1], 'LineWidth',4, 'MaxHeadSize',8) ; 
-    % grid on; axis equal;  axis([px-3 px+3 py-3 py+3]); hold off ;
-    % title('Heading Dir') ;
 
     drawnow ;
     set(gcf,'Position',[100 100 1024 1024])

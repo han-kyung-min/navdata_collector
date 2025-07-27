@@ -59,6 +59,8 @@ class bag_extractor():
             self.curr_rel_sg_topic = kwargs['colldata_extractor']['curr_rel_sg_topic']
             self.waypoint_topic = kwargs['colldata_extractor']['waypoint_topic']
             self.joy_topic = kwargs['colldata_extractor']['joy_topic']
+        else:
+            print("\033[38;5;51mOrdinary nav data extraction mode is on\033[0m")
 
         self.twiststamped_topic    = kwargs['navdata_extractor']['twiststamped_topic']
 
@@ -204,15 +206,20 @@ class bag_extractor():
                 #print("Encoding of the frames: {}".format(msg.encoding))
                 pbar.update(1)
                 # write info
-                f.write("%d %f %f %f %f %f %d %d %d \n" % (cnt, msg.angle_min, msg.angle_max, msg.angle_increment,
-                                                        msg.range_min, msg.range_max, msg.header.seq, msg.header.stamp.secs, msg.header.stamp.nsecs) )
+                f.write("%d %d %d %d %f %f %f %f %f \n" % (cnt, msg.header.seq, msg.header.stamp.secs, msg.header.stamp.nsecs,
+                                                        msg.angle_min, msg.angle_max, msg.angle_increment,
+                                                        msg.range_min, msg.range_max ) )
                 # f.write("%d %d %d\n" % (msg.header.seq, msg.header.stamp.secs, msg.header.stamp.nsecs))
                 # cv_rgb = cv_bridge.imgmsg_to_cv2(img_msg=msg, desired_encoding="bgr8")
 
                 scan_file = "%s/%05d.txt" % (out_scan_path, cnt)
                 f_scan = open(scan_file, "w")
-                f_scan.write('{} '.format( msg.ranges) )
-                f_scan.write('\n')
+                #f_scan.write('{} '.format( msg.ranges) )
+                #f_scan.write('\n')
+                angle = msg.angle_min
+                for r in msg.ranges:
+                    f_scan.write('%.5f %.5f\n'% (angle, r))
+                    angle += msg.angle_increment
                 f_scan.close()
                 cnt += 1
         f.close()

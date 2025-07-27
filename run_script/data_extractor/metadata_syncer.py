@@ -41,104 +41,102 @@ class metadata_syncer():
 
         return matching_tgt_idx, min_time_diff, ref_tgt_matching_warn
 
-    def match_rgbd_odom_colldata( self, rgb_info, depth_info, odom, subgoal, waypoint, joy, my_time_diff = 0.1):
+    def match_rgbd_odom_colldata( self, rgb_info, depth_info, scan_info, odom, subgoal, waypoint, joy, my_time_diff = 0.1):
         # time_thr unit is < ms > i.e.  nsec / 10^6 )
         # reference is waypoint
-        wp_size = len(waypoint)
-        corr_table = np.zeros( [wp_size, 6], dtype=np.uint )  # rgb, depth, odom
-        wp_rgb_matching_warn = 0
-        wp_depth_matching_warn = 0
-        wp_odom_matching_warn = 0
-        wp_subgoal_matching_warn = 0
-        wp_joy_matching_warn = 0
+        ref_data = rgb_info.copy()
+        ref_size = len(ref_data)
+        corr_table = np.zeros( [ref_size, 7], dtype=np.uint )  # rgb, depth, scan, odom, wp, sg, joy
 
-        wp_rgb_time_diffs   = np.zeros( [wp_size,1] )
-        wp_depth_time_diffs = np.zeros( [wp_size,1] )
-        wp_odom_time_diffs = np.zeros( [wp_size,1] )
-        wp_subgoal_time_diffs = np.zeros( [wp_size,1] )
-        wp_joy_time_diffs = np.zeros( [wp_size,1] )
+        ref_depth_matching_warn = 0
+        ref_scan_matching_warn = 0
+        ref_odom_matching_warn = 0
+        ref_wp_matching_warn = 0
+        ref_subgoal_matching_warn = 0
+        ref_joy_matching_warn = 0
 
-        for wp_idx in range(0, wp_size):
-            wp_s = waypoint[wp_idx, 2]
-            wp_ns= rgb_info[wp_idx, 3]
-            wp_time = wp_s + wp_ns / 10 ** 9
+        ref_depth_time_diffs = np.zeros( [ref_size,1] )
+        ref_scan_time_diffs  = np.zeros( [ref_size,1] )
+        ref_odom_time_diffs = np.zeros( [ref_size,1] )
+        ref_wp_time_diffs   = np.zeros( [ref_size,1] )
+        ref_subgoal_time_diffs = np.zeros( [ref_size,1] )
+        ref_joy_time_diffs = np.zeros( [ref_size,1] )
 
-            # find the assoicated depth data
-            # depth_secs = depth_info[:,4]
-            # depth_nsecs= depth_info[:,5] / 10 ** 9
-            # depth_time_all = depth_secs + depth_nsecs
-            #
-            # depth_wp_time_diff = abs( depth_time_all - wp_time )
-            # idx = np.where( depth_wp_time_diff == np.min(depth_wp_time_diff) )[0]
-            # matching_depth_idx = idx[0]
-            # wp_depth_time_diffs[wp_idx] = np.min(depth_wp_time_diff)
-            #
-            # if( np.min(depth_wp_time_diff) > my_time_diff ):
-            #     msg = "warning: @ rgb_idx <%d> min depth and rgb time diff is greator than %f (ms) \n"% (wp_idx, my_time_diff * 1000)
-            #     print('\033[33m' + msg + '\33[0m')
-            #     wp_depth_matching_warn += 1
-
-            # find the assoicated rgb data
-            rgb_time = rgb_info[:, 4] + rgb_info[:, 5] / 10 ** 9
-            matching_rgb_idx, min_time_diff, wp_rgb_matching_warn_incr = self.associate_time(wp_idx, wp_time, my_time_diff, rgb_time)
-            wp_rgb_time_diffs[wp_idx] = min_time_diff
-            wp_rgb_matching_warn += wp_rgb_matching_warn_incr
+        for ref_idx in range(0, ref_size):
+            ref_s = ref_data[ref_idx, 4]
+            ref_ns= ref_data[ref_idx, 5]
+            ref_time = ref_s + ref_ns / 10 ** 9
 
             # find the assoicated depth data
             depth_time = depth_info[:, 4] + depth_info[:, 5] / 10 ** 9
-            matching_depth_idx, min_time_diff, wp_depth_matching_warn_incr = self.associate_time(wp_idx, wp_time,
-                                                                                                my_time_diff, depth_time)
-            wp_depth_time_diffs[wp_idx] = min_time_diff
-            wp_depth_matching_warn += wp_depth_matching_warn_incr
+            matching_depth_idx, min_time_diff, ref_depth_matching_warn_incr = self.associate_time(ref_idx, ref_time, my_time_diff, depth_time)
+            ref_depth_time_diffs[ref_idx] = min_time_diff
+            ref_depth_matching_warn += ref_depth_matching_warn_incr
+
+            # find the associated scan data
+            scan_time = scan_info[:, 2] + scan_info[:, 3] / 10 ** 9
+            matching_scan_idx, min_time_diff, ref_scan_matching_warn_incr = self.associate_time(ref_idx, ref_time, my_time_diff, scan_time)
+            ref_scan_time_diffs[ref_idx] = min_time_diff
+            ref_scan_matching_warn += ref_scan_matching_warn_incr
 
             # find the associated odom data
             odom_time = odom[:, 2] + odom[:, 3] / 10 ** 9
-            matching_odom_idx, min_time_diff, wp_odom_matching_warn_incr = self.associate_time(wp_idx, wp_time, my_time_diff, odom_time)
-            wp_odom_time_diffs[wp_idx] = min_time_diff
-            wp_odom_matching_warn += wp_odom_matching_warn_incr
+            matching_odom_idx, min_time_diff, ref_odom_matching_warn_incr = self.associate_time(ref_idx, ref_time, my_time_diff, odom_time)
+            ref_odom_time_diffs[ref_idx] = min_time_diff
+            ref_odom_matching_warn += ref_odom_matching_warn_incr
+
+            # find the assoicated wp data
+            wp_time = waypoint[:, 2] + waypoint[:, 3] / 10 ** 9
+            matching_wp_idx, min_time_diff, ref_wp_matching_warn_incr = self.associate_time(ref_idx, ref_time, my_time_diff, wp_time)
+            ref_wp_time_diffs[ref_idx] = min_time_diff
+            ref_wp_matching_warn += ref_wp_matching_warn_incr
 
             # find the associated subgoal data
             sg_time = subgoal[:, 2] + subgoal[:, 3] / 10 ** 9
-            matching_sg_idx, min_time_diff, rgb_subgoal_matching_warn_incr = self.associate_time(wp_idx, wp_time, my_time_diff, sg_time)
-            wp_subgoal_time_diffs[wp_idx] = min_time_diff
-            wp_subgoal_matching_warn += rgb_subgoal_matching_warn_incr
+            matching_sg_idx, min_time_diff, ref_subgoal_matching_warn_incr = self.associate_time(ref_idx, ref_time, my_time_diff, sg_time)
+            ref_subgoal_time_diffs[ref_idx] = min_time_diff
+            ref_subgoal_matching_warn += ref_subgoal_matching_warn_incr
 
             # find the associated joy data
             joy_time = joy[:, 2] + joy[:, 3] / 10 ** 9
-            matching_joy_idx, min_time_diff, wp_joy_matching_warn_incr = self.associate_time(wp_idx, wp_time, my_time_diff, joy_time)
-            wp_joy_time_diffs[wp_idx] = min_time_diff
-            wp_joy_matching_warn += wp_joy_matching_warn_incr
+            matching_joy_idx, min_time_diff, ref_joy_matching_warn_incr = self.associate_time(ref_idx, ref_time, my_time_diff, joy_time)
+            ref_joy_time_diffs[ref_idx] = min_time_diff
+            ref_joy_matching_warn += ref_joy_matching_warn_incr
+            corr_table[ref_idx] = [ref_idx, matching_depth_idx, matching_scan_idx, matching_odom_idx, matching_wp_idx, matching_sg_idx, matching_joy_idx ]
 
-            corr_table[wp_idx] = [wp_idx, matching_rgb_idx, matching_depth_idx, matching_odom_idx, matching_sg_idx, matching_joy_idx ]
-
-        if( wp_odom_matching_warn > 0):
-            msg = "warning: |waypoint_time - odom_time| > %f for %d times \n"% (my_time_diff * 1000, wp_odom_matching_warn)
+        if( ref_odom_matching_warn > 0):
+            msg = "warning: |ref_time - odom_time| > %f for %d times \n"% (my_time_diff * 1000, ref_odom_matching_warn)
             print('\033[33m' + msg + '\33[0m')
 
-        if( wp_depth_matching_warn > 0):
-            msg = "warning: |waypoint_time - depth_time | > %f for %d times \n"% (my_time_diff * 1000, wp_depth_matching_warn)
+        if( ref_depth_matching_warn > 0):
+            msg = "warning: |ref_time - depth_time | > %f for %d times \n"% (my_time_diff * 1000, ref_depth_matching_warn)
             print('\033[33m' + msg + '\33[0m')
 
-        if( wp_subgoal_matching_warn > 0):
-            msg = "warning: |waypoint_time - subgoal_time | > %f for %d times \n"% (my_time_diff * 1000, wp_subgoal_matching_warn)
+        if( ref_scan_matching_warn > 0):
+            msg = "warning: |ref_time - scan_time | > %f for %d times \n"% (my_time_diff * 1000, ref_scan_matching_warn)
             print('\033[33m' + msg + '\33[0m')
 
-        if( wp_rgb_matching_warn > 0):
-            msg = "warning: |waypoint_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, wp_rgb_matching_warn)
+        if( ref_subgoal_matching_warn > 0):
+            msg = "warning: |ref_time - subgoal_time | > %f for %d times \n"% (my_time_diff * 1000, ref_subgoal_matching_warn)
             print('\033[33m' + msg + '\33[0m')
 
-        if( wp_joy_matching_warn > 0):
-            msg = "warning: |joy_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, wp_joy_matching_warn)
+        if( ref_wp_matching_warn > 0):
+            msg = "warning: |ref_time - wp_time| > %f for %d times \n"% (my_time_diff * 1000, ref_wp_matching_warn)
+            print('\033[33m' + msg + '\33[0m')
+
+        if( ref_joy_matching_warn > 0):
+            msg = "warning: |ref_time - joy_time| > %f for %d times \n"% (my_time_diff * 1000, ref_joy_matching_warn)
             print('\033[33m' + msg + '\33[0m')
 
         print("******************************************************************************************************************* \n")
-        print("waypoint & depth time diff report (ms):  min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(wp_depth_time_diffs)*1000, np.max(wp_depth_time_diffs)*1000, np.mean(wp_depth_time_diffs)*1000 ) )
-        print("waypoint & rgb time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(wp_rgb_time_diffs)*1000, np.max(wp_rgb_time_diffs)*1000, np.mean(wp_rgb_time_diffs)*1000 ) )
-        print("waypoint & odom time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(wp_odom_time_diffs)*1000, np.max(wp_odom_time_diffs)*1000, np.mean(wp_odom_time_diffs)*1000 ) )
-        print("waypoint & subgoal time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(wp_subgoal_time_diffs)*1000, np.max(wp_subgoal_time_diffs)*1000, np.mean(wp_subgoal_time_diffs)*1000 ) )
-
-        print("waypoint & joy time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(wp_joy_time_diffs)*1000, np.max(wp_joy_time_diffs)*1000, np.mean(wp_joy_time_diffs)*1000 ) )
+        print("ref & depth time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_depth_time_diffs)*1000, np.max(ref_depth_time_diffs)*1000, np.mean(ref_depth_time_diffs)*1000 ) )
+        print("ref & scan time diff report (ms):    min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_scan_time_diffs)*1000, np.max(ref_scan_time_diffs)*1000, np.mean(ref_scan_time_diffs)*1000 ) )
+        print("ref & wp time diff report (ms):      min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_wp_time_diffs)*1000, np.max(ref_wp_time_diffs)*1000, np.mean(ref_wp_time_diffs)*1000 ) )
+        print("ref & odom time diff report (ms):    min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_odom_time_diffs)*1000, np.max(ref_odom_time_diffs)*1000, np.mean(ref_odom_time_diffs)*1000 ) )
+        print("ref & subgoal time diff report (ms): min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_subgoal_time_diffs)*1000, np.max(ref_subgoal_time_diffs)*1000, np.mean(ref_subgoal_time_diffs)*1000 ) )
+        print("ref & joy time diff report (ms):     min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_joy_time_diffs)*1000, np.max(ref_joy_time_diffs)*1000, np.mean(ref_joy_time_diffs)*1000 ) )
         print("******************************************************************************************************************* \n")
+
         return corr_table
 
     def match_rgb_depth_odom( self, rgb_info, depth_info, odom, my_time_diff = 0.1):
@@ -369,8 +367,8 @@ class metadata_syncer():
                 subgoal = np.loadtxt( '%s/rel_subgoals/rel_subgoal.txt'%rawdata_dir )
                 waypoint = np.loadtxt( '%s/waypoints/waypoints.txt'%rawdata_dir )
                 joy = np.loadtxt('%s/joy/joy.txt' % rawdata_dir)
-                corr_table = self.match_rgbd_odom_colldata(rgb_info=rgb_info, depth_info=depth_info, odom=odom,
-                                                           subgoal=subgoal, waypoint=waypoint, joy=joy )
+                corr_table = self.match_rgbd_odom_colldata(rgb_info=rgb_info, depth_info=depth_info, scan_info=scan_info,
+                                                           odom=odom, subgoal=subgoal, waypoint=waypoint, joy=joy )
                 #corr_table = [wp_idx, matching_rgb_idx, matching_depth_idx, matching_odom_idx, matching_sg_idx, matching_joy_idx ]
 
                 corr_table_file = '%s/rgbd_odom_colldata_matches.txt' % rawdata_dir
@@ -406,11 +404,11 @@ class metadata_syncer():
             # load odom data
             odom = np.loadtxt('%s/traj/odom.txt' % metadata_dir)
 
-            wp_loc = None; rgb_loc = None; depth_loc = None; odom_loc = None; sg_loc = None; joy_loc = None
+            rgb_loc = None; depth_loc = None; scan_loc = None; odom_loc = None; wp_loc = None; sg_loc = None; joy_loc = None
             if self.config_colldata_extractor:
                 corr_table_file = '%s/rgbd_odom_colldata_matches.txt' % metadata_dir
-                wp_loc = 0; rgb_loc = 1; depth_loc = 2; odom_loc = 3; sg_loc = 4; joy_loc = 5
-                # corr_table = [wp_idx, matching_rgb_idx, matching_depth_idx, matching_odom_idx, matching_sg_idx, matching_joy_idx ]
+                rgb_loc = 0; depth_loc = 1; scan_loc=2; odom_loc = 3; wp_loc = 4;  sg_loc = 5; joy_loc = 6
+                # corr_table = [rgb_idx, matching_depth_idx, matching_odom_idx, matchin_wp_idx, matching_sg_idx, matching_joy_idx ]
             else:
                 corr_table_file = '%s/rgb_depth_odom_matches.txt' % metadata_dir
                 rgb_loc = 0; depth_loc = 1; odom_loc = 2;
@@ -430,7 +428,7 @@ class metadata_syncer():
             # process colldata sync if necesssary
             # corr_table = [wp_idx, matching_depth_idx, matching_odom_idx, matching_sg_idx, matching_joy_idx]
             if self.config_colldata_extractor:
-                # corr_table = [wp_idx, matching_rgb_idx, matching_depth_idx, matching_odom_idx, matching_sg_idx, matching_joy_idx ]
+                # corr_table = [wp_idx, matching_rgb_idx, matching_depth_idx, matching_scan_idx, matching_odom_idx, matching_sg_idx, matching_joy_idx ]
                 subgoal = np.loadtxt('%s/rel_subgoals/rel_subgoal.txt' % metadata_dir)
                 sync_sg_file = '%s/synced/sync_rel_subgoals.txt' % metadata_dir
                 sync_sg_arr = np.zeros([len(corr_table), subgoal.shape[1]])
@@ -438,6 +436,7 @@ class metadata_syncer():
                     sync_sg_line = subgoal[corr_table[ii][sg_loc]]
                     sync_sg_arr[ii] = sync_sg_line
                 np.savetxt(sync_sg_file, sync_sg_arr)
+
 
                 waypoint = np.loadtxt('%s/waypoints/waypoints.txt' % metadata_dir)
                 sync_wp_file = '%s/synced/sync_waypoints.txt' % metadata_dir
@@ -455,6 +454,14 @@ class metadata_syncer():
                     sync_joy_arr[ii] = sync_joy_line
                 np.savetxt(sync_joy_file, sync_joy_arr)
 
+                # scan data
+                for ii in range(0, len(corr_table)):
+                    print('saving synced %d th scan' % ii, end='\r')
+                    src_scan_file = '%s/scan/%05d.txt' % (metadata_dir, corr_table[ii][scan_loc])
+                    dst_sync_scan_file = '%s/synced/scan%05d.txt' % (metadata_dir, ii)
+                    shutil.copyfile(src_scan_file, dst_sync_scan_file)
+
+
             for ii in range(0, len(corr_table)) :
                 print('saving synced %d th metadata' % ii, end='\r')
                 src_rgb_file    = '%s/rgb/%05d.png' % (metadata_dir, corr_table[ii][rgb_loc])
@@ -464,6 +471,10 @@ class metadata_syncer():
                 dst_sync_depth_file = '%s/synced/depth%05d.png' % (metadata_dir, ii)
                 shutil.copyfile(src_rgb_file, dst_sync_rgb_file)
                 shutil.copyfile(src_depth_file, dst_sync_depth_file)
+
+
+
+
 
         print("meta-data sync process took  %.2f seconds ---" % (time.time() - start_time))
         
