@@ -47,3 +47,39 @@ Besides, this process is supposed to extract synced RGB and depth file.
 ## To visualize them
 
 > * run "script_gen_sync_movie.m" in MATLAB 
+
+
+# To collect collision dataset
+
+> ### 1. Follow the nav dataset collector above to generate a bag file to create a TOPOMAP
+
+> ### 2. Extract the bag file by following to extract the bag file. 
+> ### 3. Move the contents under bagfile to TOPOMAP dir 
+> * e.g., "/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/roundxx"
+
+> ### 4. Have Former robot ready to collect the collision events
+> * Make sure to modify "depth_nav.yaml" config file under depth-nav/config dir
+> * *topomap_dir* must be modified appropriately to make the robot follow SGs
+> * Then, place the robot where the topomap begins
+
+> ### 5. Execute the running command
+```
+    $ cd /home/$USER/python_ws/viznav/depth-nav/deployment/src
+    $ sh navigate_w_bagging_data.sh
+```
+> * You need to press L1 + joy control when the collision is about to happen. 
+> * Pressing L1, L2, R1, and R2 together will end the process.
+ 
+> ### 6. Extract the stored colldata bag file
+> * Open navdata_collector.yaml which is located under ~/catkin_ws/src/navdata_collector/param 
+> * Enable *colldata_extractor* tab (curr_rel_sg_topic, waypoint_topic, joy_topic). This will switch the extractor script to colldata collectioni mode
+ ```
+    $ cd /home/$USER/catkin_ws/src/navdata_collector/run_script/data_extractor
+    $ python script_extract_bags.py ../../param/navdata_collector.yaml
+```
+> ### 7. Semi-automatic data collection
+> * (1) Open MATLAB
+> * (2) cd to /home/hankm/catkin_ws/src/navdata_collector/run_script/data_extractor/potmap2d
+> * (3) Run  script_trajectory_correction_from_lpm.m
+
+

@@ -27,7 +27,7 @@ navdata_collector:
 navdata_extractor:
     #inpath:             "/media/results/navdata_collector/former28/2025-06-13-16-42"   # train
     #outpath:            "/media/results/navdata_collector/processed"                   # train
-    inpath:             "/media/results/navdata_collector/collision_data/2025-07-27-15-38"         # deployment
+    inpath:             "/media/results/navdata_collector/collision_data/2025-07-27-17-18"         # deployment
     outpath:            "/media/results/navdata_collector/collision_data/processed"                # deployment
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"

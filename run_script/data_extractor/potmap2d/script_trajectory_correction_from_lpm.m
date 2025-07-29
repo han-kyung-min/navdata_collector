@@ -2,7 +2,6 @@
 % User is expect to manually select a corrected SG in order to generated
 % the corrected waypoints
 
-
 clear all; close all; clc;
 
 % source folder
@@ -12,18 +11,27 @@ config = ReadYaml(config_file) ;
 base_dir = '/media/results/navdata_collector/collision_data/processed' ;
 
 bag_dirs = dir( sprintf('%s/20*/bag_*', base_dir) ) ;
-sync_metadata_dir = sprintf('%s/%s/synced', bag_dirs.folder, bag_dirs.name ) ;
+
+for idx=1:length(bag_dirs)
+    sync_metadata_dirs{idx} = sprintf('%s/%s/synced', bag_dirs(idx).folder, bag_dirs(idx).name ) ;
+end
+
+%%===============================================================%%
+    sync_metadata_dir = sync_metadata_dirs{3} ;
+%%===============================================================%%
 
 str_split = split(sync_metadata_dir, '/') ;
 navtime_id = str_split{end-1} ;
 colldata_dir = sprintf('/media/data/mydata/former_datasets/colldata/%s', navtime_id) ; 
-if ~isdir(colldata_dir)
-    mkdir(colldata_dir)
+
+if isdir(colldata_dir)
+    rmdir(colldata_dir, 's') ;
 end
+mkdir(colldata_dir) ;
 
 % TODO: write a file and record collision happening data indexes, then load the file %
 % 2025-07-13-17-41/bag_2025-07-13-17-41-23
-col_data_idx = [2500:2560, 2672:2680, 2839:2850, 2937:2957] ;
+%col_data_idx = [2500:2560, 2672:2680, 2839:2850, 2937:2957] ;
 
 eta = 1.0 ;             % Repulsive potential scaling factor (η)
 rho0 = 1.2 / 0.05 ;     % Influence distance (ρ0, # grids )
@@ -61,6 +69,7 @@ waypoints = load(sprintf('%s/sync_waypoints.txt', sync_metadata_dir)) ;
 % load subgoal
 subgoals = load(sprintf('%s/sync_rel_subgoals.txt', sync_metadata_dir)) ;
 data_cnt = 0;
+
 
 for data_idx = 1:num_data
 
@@ -129,7 +138,7 @@ for data_idx = 1:num_data
     arrow_step = 1; arrow_scale = 20;
 
     fig = figure(4); clf;
-    fig.Position = [2800, 400, 1400, 640]
+    fig.Position = [2800, 400, 1400, 640] ;
     t = tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
     nexttile(t, 1);
     imshow(rgb_img) ;
@@ -150,12 +159,12 @@ for data_idx = 1:num_data
     end
 
     colorbar; 
-    title( sprintf('Collision data @ data idx: %d', data_idx)) ;
+    title( sprintf('Collision data @ data idx: %d ,  # Collected Data: %d ', data_idx, data_cnt)) ;
     hold on;
     
     h2 = quiver( rx+5, ry, roi_repflow_u * arrow_scale, roi_repflow_v * arrow_scale, 'r') ;
     set(h2, 'AutoScale', 'on', 'AutoScaleFactor', 1, 'LineWidth',2, 'MaxHeadSize', 12) ;
-    lgd = legend('Pred Waypts','SG', 'Robot', 'Rep Force', 'Location', 'NW')
+    lgd = legend('Pred Waypts','SG', 'Robot', 'F_{rep}', 'Location', 'NW')
     lgd.Color = [0.8 0.8 0.8];
 
 
@@ -173,7 +182,7 @@ for data_idx = 1:num_data
 
     % Compute the corrected waypoints
     [out_waypts, target_waypoint] = sample_corrected_waypoints(P0, P2, resolution, fps, ws) ;
-    plot( out_waypts(:,1), out_waypts(:,2), 'gs', 'MarkerFaceColor', 'g') ;
+    plot( out_waypts(:,1) + rx, out_waypts(:,2) + rx, 'gs', 'MarkerFaceColor', 'g') ;
 
     %% == 7. Store data == %%
     out_dir = sprintf('%s/data%05d',colldata_dir, data_cnt) ;
@@ -199,7 +208,7 @@ for data_idx = 1:num_data
     rcHr = zeros(4,4,nc) ; 
     rcHr(:,:,end) = wHr(:,:,end) ;
     
-    fid = fopen( sprintf('%s/pose_context.txt', out_dir) , 'w') ;
+    fid = fopen( sprintf('%s/pose_context_m.txt', out_dir) , 'w') ;
     for ii=1:nc
         rcHr(:,:,ii) = inv(wHr(:,:,end)) * wHr(:,:,ii) ;
         x_prev_m = rcHr(1,4,ii) * resolution ; % m
@@ -223,19 +232,24 @@ for data_idx = 1:num_data
 
     % (4) save corrected waypoint
     out_waypts_m = out_waypts * resolution ;
-    fid = fopen( sprintf('%s/corrected_waypoints.txt', out_dir), 'w' ) ;
+    fid = fopen( sprintf('%s/corrected_waypoints_m.txt', out_dir), 'w' ) ;
     fprintf( fid, '%6.4f %6.4f \n', out_waypts_m' ) ; 
     fclose(fid) ;
 
     % (5) save pred waypoints
     pred_waypts_m = reshape( waypt_line(8:end), 4, nc)' ;
-    fid = fopen( sprintf('%s/pred_waypoints.txt', out_dir), 'w') ;
+    fid = fopen( sprintf('%s/pred_waypoints_m.txt', out_dir), 'w') ;
     fprintf( fid, '%6.4f %6.4f %6.4f %6.4f \n', pred_waypts_m') ;
     fclose(fid) ;
 
     % (6) save context idx
     fid = fopen( sprintf('%s/context_index.txt', out_dir), 'w') ;
     fprintf(fid, '%d ', context_idxs);
+    fclose(fid) ;
+
+    % (7) save SGs
+    fid = fopen( sprintf('%s/subgoals_m.txt', out_dir), 'w') ; % old, corrected
+    fprintf(fid, '%6.4f %6.4f %6.4f %6.4f\n', [ sg_px * resolution, [gx-rx, gy-ry] * resolution ] ) ;
     fclose(fid) ;
 
     data_cnt = data_cnt + 1 ;

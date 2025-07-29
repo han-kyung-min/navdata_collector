@@ -57,14 +57,10 @@ for data_idx=1 : length(colldata_dirs)
     plot(rx, ry, 'co', 'markerfacecolor', 'c', 'markersize', 12) ;
     plot(corr_waypts_px(:,1) , corr_waypts_px(:,2) , 'gs', 'MarkerFaceColor', 'g', 'MarkerSize', 4 );
     plot(pred_waypts_px(:,1) , pred_waypts_px(:,2) , 'ys', 'MarkerFaceColor', 'y', 'MarkerSize', 4 );
-    plot(sgs_px(:,1), sgs_px(:,2), 'ms', 'MarkerSize', 10, 'MarkerFaceColor', 'm' ) ;
-    plot(sgs_px(:,3), sgs_px(:,4), 'gs', 'MarkerSize', 10 , 'MarkerFaceColor', 'g') ;
+    plot(sgs_px(:,1), sgs_px(:,2), 'ms', 'MarkerSize', 10, 'MakerFaceColor', 'm' ) ;
+    plot(sgs_px(:,3), sgs_px(:,4), 'gs', 'MarkerSize', 10 , 'MakerFaceColor', 'g') ;
 
-    lgd = legend('Robot', 'New Waypoints', 'Old Waypoints', 'Old SG', 'New SG', 'Location', 'NW') ;
-    lgd.Color = [0.8 0.8 0.8];
-    pause
-
-    outname = sprintf('%s/outres%04d.png', out_folder, data_idx) ;
-    exportgraphics(gcf, outname, 'ContentType', 'vector', 'BackgroundColor','none');
+    lgd = legend('robot', 'new wpts', 'old wpts', 'old sg', 'new sg') ;
+    pause(.1)
 
 end
