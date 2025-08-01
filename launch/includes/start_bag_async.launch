@@ -53,6 +53,8 @@
 
 /move_base/goal
 /move_base/NavfnROS/plan
+/move_base/local_costmap/costmap
+/map
 
 /waypoint
 /curr_rel_subgoal
