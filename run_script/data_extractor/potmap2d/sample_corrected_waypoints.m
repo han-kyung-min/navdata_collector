@@ -58,4 +58,18 @@ function [out_waypts, target_waypoint] = sample_corrected_waypoints(P0, P2, reso
         target_waypoint = P2 - P0;
         out_waypts = repmat( target_waypoint, [num_wpts,1] ) ;
     end
+
+    orientations = zeros(num_wpts, 2);
+    for i = 1:num_wpts-1
+        dx = out_waypts(i+1, 1) - out_waypts(i, 1);   % wpt1  should heading to wpt2
+        dy = out_waypts(i+1, 2) - out_waypts(i, 2);
+        theta = atan2(dy, dx);  % radians
+        half_theta = theta / 2 ;
+        q = [cos(half_theta), zeros(size(theta)), zeros(size(theta)), sin(half_theta)] ;
+        q = q / norm(q) ;
+        orientations(i,:) = [q(1), q(4)] ;
+    end
+    orientations(end,:) = orientations(end-1,:) ;
+    out_waypts = [ out_waypts, orientations ] ;
+
 end
