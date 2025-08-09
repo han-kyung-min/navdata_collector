@@ -15,8 +15,8 @@ navdata_collector:
     map_topic:          "/map"
     #metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
-    #bagfile_root_path:  "/media/results/navdata_collector"
-    bagfile_root_path:  "/media/glab/FetchSSD/results/colldata_collector"
+    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
+    #bagfile_root_path:  "/media/glab/FetchSSD/results/colldata_collector"
 
     max_time_per_round: 1800 # seconds (30 mins)
     max_nav_time:       3600 # seconds
@@ -26,10 +26,10 @@ navdata_collector:
     global_height:      2048
     
 navdata_extractor:
-    #inpath:             "/media/results/navdata_collector/former29/2025-08-07-14-20"   # train
-    #outpath:            "/media/results/navdata_collector/processed"                   # train
-    inpath:             "/media/results/navdata_collector/collision_data/2025-07-13-17-41"         # deployment
-    outpath:            "/media/results/navdata_collector/collision_data/processed"                # deployment
+    inpath:             "/media/results/navdata_collector/former29/2025-08-07-14-20"   # train
+    outpath:            "/media/results/navdata_collector/processed"                   # train
+    #inpath:             "/media/results/navdata_collector/collision_data/2025-07-13-17-41"         # deployment
+    #outpath:            "/media/results/navdata_collector/collision_data/processed"                # deployment
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"
     rgbd_topic:         "/rgbd_throttle/rgbd"

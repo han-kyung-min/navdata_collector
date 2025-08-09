@@ -16,32 +16,31 @@ import shutil
 from std_srvs.srv import Empty
 from std_msgs.msg import Bool
 from navdata_collector.msg import rgbd
-from slam_toolbox.srv import SerializePoseGraph, SaveMap
+from slam_toolbox_msgs.srv import SerializePoseGraph, SaveMap
 import roslaunch
 
-def save_slamtoolbox_maps(out_base):
-    """out_base: e.g., '/some/dir/MAP1_2025-08-09_14-32-00' (without extension)"""
-    # Wait for services (slam_toolbox must still be running!)
-    rospy.loginfo("Waiting for SLAM Toolbox save services ...")
-    rospy.wait_for_service('/slam_toolbox/serialize_map', timeout=5)
-    rospy.wait_for_service('/slam_toolbox/save_map', timeout=5)
+import signal, subprocess, select
 
-    serialize = rospy.ServiceProxy('/slam_toolbox/serialize_map', SerializePoseGraph)
-    savegrid  = rospy.ServiceProxy('/slam_toolbox/save_map', SaveMap)
+def save_slamtoolbox_maps_cli(base_path, slam_ns="/slam_toolbox"):
+    serialize_srv = slam_ns + "/serialize_map"
+    savemap_srv   = slam_ns + "/save_map"
+    os.makedirs(os.path.dirname(base_path), exist_ok=True)
+    def call(cmd): subprocess.check_call(cmd, shell=True)
+    call(f'rosservice call {serialize_srv} "filename: \'{base_path}\'"')
+    call(f'rosservice call {savemap_srv}   "name:     \'{base_path}\'"')
 
-    # 1) Pose-graph (for resume/localization/continue-mapping)
+def key_pressed():
+    dr,_,_ = select.select([sys.stdin], [], [], 0)
+    return sys.stdin.read(1) if dr else None
+
+def shutdown_and_wait(launch_obj, name):
+    print(f"Shutting down {name}...")
     try:
-        resp1 = serialize(out_base)         # filename field
-        rospy.loginfo("Serialized pose graph to base: %s", out_base)
+        launch_obj.shutdown()
+        while any(p.is_alive() for p in launch_obj._processes.values()):
+            time.sleep(0.1)  # short poll, no long sleeps
     except Exception as e:
-        rospy.logwarn("serialize_map failed: %s", str(e))
-
-    # 2) Occupancy grid (for map_server)
-    try:
-        resp2 = savegrid(out_base)          # name field (base path)
-        rospy.loginfo("Saved occupancy grid to base: %s", out_base)
-    except Exception as e:
-        rospy.logwarn("save_map failed: %s", str(e))
+        print(f"[WARN] Failed to shutdown {name}: {e}")
 
 def main(argv):
 
@@ -103,11 +102,12 @@ def main(argv):
     out_msg = "I found all core msgs "
     print('\033[32m' + out_msg + '\33[0m')
     
-    last_time = start #time.time() 
+    #last_time = start #time.time()
 
     for round_idx in range(0, num_explorations):
         # make data dir
         # launch files
+        last_time = time.time()
         roslaunch.configure_logging(uuid)
         launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/includes/move_former_slam.launch"%pkg_dir])
         launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/manual_collector_async.launch"%pkg_dir])
@@ -133,25 +133,38 @@ def main(argv):
         rgbd_msg = rospy.wait_for_message('rgbd_throttle/rgbd', rgbd, timeout=None)
         
         print("<%d>th Bagging started \n"%round_idx )
-        
-        while not rospy.is_shutdown()::
+
+        while True:
+            ch = key_pressed()
             curr_time = time.time()
-            if( curr_time - last_time > max_time_per_round  ):
-                last_time = curr_time
-                print("This round reached the max time: <%d> "% max_time_per_round)
+            if ch == 'q':
+                print("Ending round on 'q'.")
                 break
-            
+            if curr_time - last_time > max_time_per_round:
+                print(f"Time limit {max_time_per_round}s reached.")
+                break
+            time.sleep(0.05)
+
         print("<%d> th exploration is done. Closing the exploration service \n"%round_idx)
 
         map_base = os.path.join(bagfile_path, "MAP_round_%02d" % round_idx)
 
         # Save SLAM maps BEFORE stopping slam_toolbox
-        save_slamtoolbox_maps(map_base)
+        try:
+            print("[INFO] Saving map to:", map_base)
+            save_slamtoolbox_maps_cli(map_base, slam_ns="/slam_toolbox")  # adjust namespace if you use one
+            print("[INFO] Map saved.")
+        except Exception as e:
+            print("[WARN] Map save failed:", e)
 
-        launch3.shutdown()
-        launch2.shutdown()
-        launch1.shutdown()
-        time.sleep(5)
+        shutdown_and_wait(launch3, "rosbag recorder")
+        shutdown_and_wait(launch2, "data collector")
+        shutdown_and_wait(launch1, "SLAM + move_base")
+
+        # launch3.shutdown()
+        # launch2.shutdown()
+        # launch1.shutdown()
+        #time.sleep(5)
 
         if(curr_time - start > max_nav_time):
             print("Max nav time has been reached %d \n"%max_nav_time)
