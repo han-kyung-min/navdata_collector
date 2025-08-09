@@ -11,6 +11,15 @@ config = ReadYaml(config_file) ;
 base_dir = '/media/results/navdata_collector/collision_data/processed' ;
 
 bag_dirs = dir( sprintf('%s/20*/bag_*', base_dir) ) ;
+out_base_dir = sprintf('/media/data/mydata/former_datasets/colldata');
+% write readme.txt file
+fid = fopen( sprintf('%s/readme.txt', out_base_dir), 'w') ;
+fprintf(fid, 'Collision data info. They are all defined w.r.t current robot pose\n') ;
+fprintf(fid, 'corrected_waypoints_m.txt: \t  x, y, qw, qz \n') ;
+fprintf(fid, 'pred_waypoints_m.txt:      \t  x, y, qw, qz \n') ;
+fprintf(fid, 'pose_context_m.txt:        \t  x, y, 0, qw, qx, qy, qz\n') ;
+fprintf(fid, 'subgoals_m.txt:            \t  x_old, y_old, 0, 0\n x_corr, y_corr, qw, qz\n ') ;
+fclose(fid) ;
 
 for idx=1:length(bag_dirs)
     sync_metadata_dirs{idx} = sprintf('%s/%s/synced', bag_dirs(idx).folder, bag_dirs(idx).name ) ;
@@ -18,28 +27,19 @@ end
 
 %%===============================================================%%
 
-    sync_metadata_dir = sync_metadata_dirs{4} ;
+    sync_metadata_dir = sync_metadata_dirs{1} ;
 
 %%===============================================================%%
 
 str_split = split(sync_metadata_dir, '/') ;
 navtime_id = str_split{end-1} ;
-out_base_dir = sprintf('/media/data/mydata/former_datasets/colldata');
+
 colldata_dir = sprintf('%s/%s', out_base_dir, navtime_id) ; 
 
 if isdir(colldata_dir)
     rmdir(colldata_dir, 's') ;
 end
 mkdir(colldata_dir) ;
-
-% write readme.txt file
-fid = fopen( sprintf('%s/readme.txt', out_base_dir), 'w') ;
-fprintf(fid, 'Collision data info. They are all defined w.r.t current robot pose\n') ;
-fprintf(fid, 'corrected_waypoints_m.txt: \t  x, y, qw, qz \n') ;
-fprintf(fid, 'pred_waypoints_m.txt:      \t  x, y, qw, qz \n') ;
-fprintf(fid, 'pose_context_m.txt:        \t  x, y, 0, qw, qx, qy, qz\n') ;
-fprintf(fid, 'subgoals_m.txt:            \t  x_old, y_old, x_corr, y_corr\n') ;
-fclose(fid) ;
 
 % TODO: write a file and record collision happening data indexes, then load the file %
 % 2025-07-13-17-41/bag_2025-07-13-17-41-23
@@ -226,7 +226,7 @@ for data_idx = 1:num_data
         x_prev_m = rcHr(1,4,ii) * resolution ; % m
         y_prev_m = rcHr(2,4,ii) * resolution ;
         q = htm_to_quat( rcHr(:,:,ii) ) ; 
-        fprintf( fid, '%6.4f %6.4f %6.4f %6.4f %6.4f %6.4f %6.4f\n', [ x_prev_m y_prev_m 0 q(:)']' ) ; 
+        fprintf( fid, '%6.4f %6.4f %6.4f %6.4f %6.4f %6.4f %6.4f\n', [ x_prev_m y_prev_m 0 q(:)']' ) ; % x y z qw qx qy qz
     end
     fclose(fid);
 
@@ -262,17 +262,16 @@ for data_idx = 1:num_data
     fclose(fid) ;
 
     % (7) save SGs
-    dx = gx - out_waypts(i, 1);   % wpt1  should heading to wpt2
-    dy = out_waypts(i+1, 2) - out_waypts(i, 2);
-    theta = atan2(dy, dx);  % radians
+    dx = gx - rx ;   % wpt1  should heading to wpt2
+    dy = gy - ry ;
+    theta = atan2(dy, dx) ;  % radians
     half_theta = theta / 2 ;
     q = [cos(half_theta), zeros(size(theta)), zeros(size(theta)), sin(half_theta)] ;
-    q = q / norm(q) ;
-    orientations(i,:) = [q(1), q(4)] ;
-
+    q = q / norm(q) ; % subgoal orient
+    
     fid = fopen( sprintf('%s/subgoals_m.txt', out_dir), 'w') ; % old, corrected
     fprintf(fid, '%6.4f %6.4f 0 0 \n%6.4f %6.4f %6.4f %6.4f\n', sg_px(1) * resolution, sg_px(1) * resolution,...
-                                                        (gx-rx)*resolution, (gy-ry)*resolution,  ] ) ;
+                                                        dx*resolution, dy*resolution, q(1), q(4) ) ;
     fclose(fid) ;
 
     data_cnt = data_cnt + 1 ;

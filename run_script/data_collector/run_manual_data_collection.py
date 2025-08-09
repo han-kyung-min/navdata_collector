@@ -16,9 +16,32 @@ import shutil
 from std_srvs.srv import Empty
 from std_msgs.msg import Bool
 from navdata_collector.msg import rgbd
-
+from slam_toolbox.srv import SerializePoseGraph, SaveMap
 import roslaunch
 
+def save_slamtoolbox_maps(out_base):
+    """out_base: e.g., '/some/dir/MAP1_2025-08-09_14-32-00' (without extension)"""
+    # Wait for services (slam_toolbox must still be running!)
+    rospy.loginfo("Waiting for SLAM Toolbox save services ...")
+    rospy.wait_for_service('/slam_toolbox/serialize_map', timeout=5)
+    rospy.wait_for_service('/slam_toolbox/save_map', timeout=5)
+
+    serialize = rospy.ServiceProxy('/slam_toolbox/serialize_map', SerializePoseGraph)
+    savegrid  = rospy.ServiceProxy('/slam_toolbox/save_map', SaveMap)
+
+    # 1) Pose-graph (for resume/localization/continue-mapping)
+    try:
+        resp1 = serialize(out_base)         # filename field
+        rospy.loginfo("Serialized pose graph to base: %s", out_base)
+    except Exception as e:
+        rospy.logwarn("serialize_map failed: %s", str(e))
+
+    # 2) Occupancy grid (for map_server)
+    try:
+        resp2 = savegrid(out_base)          # name field (base path)
+        rospy.loginfo("Saved occupancy grid to base: %s", out_base)
+    except Exception as e:
+        rospy.logwarn("save_map failed: %s", str(e))
 
 def main(argv):
 
@@ -111,7 +134,7 @@ def main(argv):
         
         print("<%d>th Bagging started \n"%round_idx )
         
-        while True:
+        while not rospy.is_shutdown()::
             curr_time = time.time()
             if( curr_time - last_time > max_time_per_round  ):
                 last_time = curr_time
@@ -119,6 +142,11 @@ def main(argv):
                 break
             
         print("<%d> th exploration is done. Closing the exploration service \n"%round_idx)
+
+        map_base = os.path.join(bagfile_path, "MAP_round_%02d" % round_idx)
+
+        # Save SLAM maps BEFORE stopping slam_toolbox
+        save_slamtoolbox_maps(map_base)
 
         launch3.shutdown()
         launch2.shutdown()

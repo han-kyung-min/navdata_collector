@@ -22,6 +22,7 @@ from geometry_msgs.msg import TwistStamped
 from geometry_msgs.msg import PoseStamped
 from sensor_msgs.msg import LaserScan, Joy
 from navdata_collector.msg import waypoint_stamped
+import rigid_motion as rm
 from tqdm import tqdm
 from tqdm import trange
 
@@ -32,6 +33,7 @@ class bag_extractor():
         #self.depth_topic    = kwargs['navdata_extractor']['depth_topic']
         self.scan_topic     = kwargs['navdata_extractor']['scan_topic']
         self.odom_topic     = kwargs['navdata_extractor']['odom_topic']
+        self.tf_topic       = kwargs['navdata_extractor']['tf_topic']
         self.odom_filt_topic= kwargs['navdata_extractor']['odom_filt_topic']
         self.slam_pose_topic= kwargs['navdata_collector']['robotpose_topic']
 
@@ -101,6 +103,8 @@ class bag_extractor():
         f.write("scan_info.txt  contains:       idx, rmin(m), rmax(m), ang_min, ang_max, ang_inc(rad), seq, time(s), time(ns) \n")
         f.write("odom contains (pose, twist):   idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw, vx, vy, vz, wx, wy, wz \n")
         f.write("odom_filt data contains:       idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw, vx, vy, vz, wx, wy, wz \n")
+        f.write("tf_m2o.txt     contains:       idx, 0,   time(s), time(ns), px, py, pz, qx, qy, qz, qw \n")
+        f.write("tf_m2b.txt     contains:       idx, 0,   time(s), time(ns), px, py, pz, qx, qy, qz, qw \n")
 
         if self.config_colldata_extractor:
             f.write('rel_subgoal.txt contains:  idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw \n')
@@ -289,6 +293,54 @@ class bag_extractor():
                 cnt += 1
             f.close()
 
+    def extractTF(self, bag, out_traj_path):
+        m2o_cnt = 0
+        m2b_cnt = 0
+        tf_m2o_file = '%s/tf_m2o.txt' % out_traj_path
+        tf_m2b_file = '%s/tf_m2b.txt' % out_traj_path
+        #target_frames = ["odom", "base_link"]
+        f_m2o = open(tf_m2o_file, 'w')
+        f_m2b = open(tf_m2b_file, 'w')
+        mHo = np.eye(4)
+        mHb = np.eye(4)
+        with tqdm(total=bag.get_message_count(self.tf_topic)) as pbar:
+            for topic, msg, i in bag.read_messages(topics=[self.tf_topic]):
+                pbar.update(1)
+                for tform in msg.transforms:
+                    parent = tform.header.frame_id
+                    child  = tform.child_frame_id
+                    stamp  = tform.header.stamp
+
+                    if parent == "map" and child == "odom":
+                        x_o = tform.transform.translation.x
+                        y_o = tform.transform.translation.y
+                        qx_o = tform.transform.rotation.x
+                        qy_o = tform.transform.rotation.y
+                        qz_o = tform.transform.rotation.z
+                        qw_o = tform.transform.rotation.w
+
+                        mHo = rm.quat_to_htm( [qw_o, qx_o, qy_o, qz_o] )
+                        mHo[:2, 3] = [x_o, y_o]
+                        f_m2o.write("%d %d %d %d %f %f %f %f %f %f %f \n" % (m2o_cnt, 0, stamp.secs, stamp.nsecs, x_o, y_o, 0, qx_o, qy_o, qz_o, qw_o))
+                        m2o_cnt += 1
+
+                    elif parent == "odom" and child == "base_link":
+                        x_b = tform.transform.translation.x
+                        y_b = tform.transform.translation.y
+                        qx_b = tform.transform.rotation.x
+                        qy_b = tform.transform.rotation.y
+                        qz_b = tform.transform.rotation.z
+                        qw_b = tform.transform.rotation.w
+                        oHb = rm.quat_to_htm( [qw_b, qx_b, qy_b, qz_b] )
+                        oHb[:2, 3] = [x_b, y_b]
+                        mHb = np.matmul(mHo, oHb)
+                        q = rm.htm_to_quat( mHb )   # w, x, y, z
+                        x, y, z = mHb[:3, 3]
+                        f_m2b.write("%d %d %d %d %f %f %f %f %f %f %f \n" % (m2b_cnt, 0, stamp.secs, stamp.nsecs, x, y, z, q[1], q[2], q[3], q[0]))
+                        m2b_cnt += 1
+
+################################# colldata extracotr ###################################
+
     def extractSubGoals(self, bag, out_traj_path):
         cnt = 0
         sg_file = "%s/rel_subgoal.txt" % out_traj_path
@@ -361,7 +413,10 @@ class bag_extractor():
         # for bagfile in bagfiles:
         #     # rosbag play each file then dump files into the dest folder
 
-        self.extraction_path = '%s/%s' % (self.base_extraction_path, self.navtime_id)
+        if self.config_colldata_extractor:
+            self.extraction_path = '%s/coll_%s' % (self.base_extraction_path, self.navtime_id)
+        else:
+            self.extraction_path = '%s/%s' % (self.base_extraction_path, self.navtime_id)
         if os.path.isdir(self.extraction_path):
             shutil.rmtree(self.extraction_path)
         os.mkdir(self.extraction_path)
@@ -377,6 +432,7 @@ class bag_extractor():
                 bagfile_time_str = bagfile[stridx + 4:-4]
                 #bag_time = bagfile_time_str.split('-')
                 bag_extraction_path = '%s/bag_%s' % (self.extraction_path, bagfile_time_str)
+
                 if os.path.isdir(bag_extraction_path):
                     shutil.rmtree(bag_extraction_path)
                 os.mkdir(bag_extraction_path)
@@ -392,8 +448,15 @@ class bag_extractor():
                 os.mkdir(out_rgb_path)
                 os.mkdir(out_scan_path)
 
+                bag_id = bagfile.split('/')[-1].split('.')[0]
+                pathlib.Path('%s/%s' % (bag_extraction_path, bag_id)).touch()
+
                 print("extracting rgb-d msgs from <%d> th bag"%(bag_idx))
                 self.extractRGBD(self.bag, out_rgb_path, out_depth_path)
+
+                print("\r extracting TF (base_link wrt map) from <%d> th bag: %s"%(bag_idx, bagfile_time_str) )
+                self.extractTF(self.bag, out_traj_path)
+
                 print("\r extracting scan msgs from <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractScan(self.bag, out_scan_path)
                 print("\r extracting odom msgs from <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
@@ -401,7 +464,10 @@ class bag_extractor():
                 print("\r extracting odom_filtered msgs from <%d> th bag: %s"% (bag_idx, bagfile_time_str) )
                 self.extractOdomFilt(self.bag, out_traj_path)
                 print("\r extracting cmd_vel(twist_stamped) from <%d> th bag: %s"%(bag_idx, bagfile_time_str) )
-                self.extractTwistStamped(self.bag,out_traj_path)
+                self.extractTwistStamped(self.bag, out_traj_path)
+
+                #print("\r extracting map from <%d> th bag: %s"%(bag_idx, bagfile_time_str) )
+                #self.extractMap(self.bag, out_traj_path)
 
                 if self.config_colldata_extractor:
                     # For collision data collection
