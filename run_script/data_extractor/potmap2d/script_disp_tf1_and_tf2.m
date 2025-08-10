@@ -2,32 +2,49 @@
 % It shows (1) the topomap's tf1_m2b 
 % (2) colldata's tf2_m2b and (3) odom
 
-tf1_data_dir = '/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/round10/topomap' ;
-tf2_data_dir = '/media/results/navdata_collector/collision_data/processed/coll_2025-07-13-17-41/bag_2025-07-13-17-41-23/synced' ;
+clear all; close all; clc;
 
+tf1_data_dir = '/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/round10-1/topomap' ;
+tf2_data_dir = '/media/results/navdata_collector/collision_data/processed/coll_2025-08-10-15-05/bag_2025-08-10-15-05-17/synced'
 tf1_m2b_file = sprintf('%s/topo_tf_m2b.txt', tf1_data_dir) ;
 tf2_m2o_file = sprintf('%s/sync_tf_m2o.txt', tf2_data_dir) ;
 tf2_o2b_file = sprintf('%s/sync_odom.txt', tf2_data_dir) ;
+tf2_m2b_file = sprintf('%s/sync_tf_m2b.txt', tf2_data_dir) ;
 
-[tf1_m2b_raw, xy_m1_b, m1Hb] = load_pose_data( tf1_m2b_file ) ;
-[tf2_m2o_raw, xy_m2_o2, m2Ho2] = load_pose_data( tf2_m2o_file ) ;
-[tf2_o2b_raw, xy_o2_b, o2Hb] = load_pose_data( tf2_o2b_file ) ;
+[tf1_m2b_raw, tf1_xy_m2b, m1Hb] = load_pose_data( tf1_m2b_file ) ;
+[tf2_m2o_raw, tf2_xy_m2o, m2Ho2] = load_pose_data( tf2_m2o_file ) ;
+[tf2_o2b_raw, tf2_xy_o2b, o2Hb] = load_pose_data( tf2_o2b_file ) ;
+[tf2_m2b_raw, tf2_xy_m2b, m2Hb] = load_pose_data( tf2_m2b_file ) ;
+
 
 [num_topo] = size(tf1_m2b_raw) ;
-[num_pose_data, ~] = size(m2o) ;
+[num_pose_data, ~] = size(tf2_xy_m2b) ;
 
-% compute m2Hb
-m2Hb = zeros(4,4,num_pose_data) ;
-xy_m2_b = zeros(num_pose_data, 2) ;
-for idx=1:num_pose_data
-    m2Hb(:,:,idx) = m2Ho2(:,:,idx) * o2Hb(:,:,idx) ;
-    xy_m2_b(idx,:) = m2Hb(1:2,4,idx) ;
+for idx=1:num_topo
+    m1Hb(:,:,idx) = inv(m1Hb(:,:,1)) * m1Hb(:,:,idx) ;
 end
 
-plot(xy_m1_b(:,1), xy_m1_b(:,2), 'r*' )
-hold on
-plot(xy_o2_b(:,1), xy_o2_b(:,2), 'b.' ) ; hold on
-plot(xy_m2_b(:,1), xy_m2_b(:,2), 'm.' ) ;
+for idx=1:num_pose_data
+    m2Hb(:,:,idx) = inv(m2Hb(:,:,1)) * m2Hb(:,:,idx) ;
+end
+
+tf1_xy_m2b = [squeeze(m1Hb(1,4,:))  squeeze(m1Hb(2,4,:)) ] ;
+tf2_xy_m2b = [squeeze(m2Hb(1,4,:))  squeeze(m2Hb(2,4,:)) ] ;
+
+% compute m2Hb
+m2Hb_est = zeros(4,4,num_pose_data) ;
+xy_m2_b = zeros(num_pose_data, 2) ;
+for idx=1:num_pose_data
+    m2Hb_est(:,:,idx) = m2Ho2(:,:,idx) * o2Hb(:,:,idx) ;
+end
+
+tf2_xy_m2b_est = [squeeze(m2Hb_est(1,4,:))  squeeze(m2Hb_est(2,4,:)) ] ;
+
+
+plot(tf1_xy_m2b(:,1), tf1_xy_m2b(:,2), 'r*' ); hold on
+plot(tf2_xy_m2b(:,1), tf2_xy_m2b(:,2), 'mo' )
+plot(tf2_xy_m2b_est(:,1), tf2_xy_m2b_est(:,2), 'c.' )
+
 
 
 for idx=1:num_data
