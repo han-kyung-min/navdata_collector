@@ -19,6 +19,7 @@ from sensor_msgs.msg import Joy
 from navdata_collector.msg import rgbd
 
 import roslaunch
+import argparse
 
 # Joystick trigger config
 DEADMAN_BUTTON = 4   # Change if needed
@@ -44,6 +45,15 @@ def finish_callback(msg):
     finish_flag = msg.data
 
 def main(argv):
+    
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--map_file_name", type=str, required=True, help="Base path to saved map (no extension)")
+    args = parser.parse_args(argv[1:])
+
+    map_base = args.map_file_name
+    
+    print("map_file_name: %s"%map_base)
+    
     global joy_msg, trigger_time, reached_goal_msg
     
     base_dir = os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))))
@@ -110,7 +120,16 @@ def main(argv):
         # make data dir
         # launch files
     roslaunch.configure_logging(uuid)
-    launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/includes/move_former_slam.launch"%pkg_dir])
+        
+    cli_arg1 = [
+        "%s/launch/includes/move_former_sync_slam.launch" % pkg_dir,
+        "map_file_name:=%s" % map_base   # NOTE: := not =
+    ]
+    roslaunch1 = [(roslaunch.rlutil.resolve_launch_arguments(cli_arg1)[0], cli_arg1[1:])]
+    
+    #launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/includes/move_former_slam.launch"%pkg_dir, "map_file=%s" %map_base] )
+    launch1 = roslaunch.parent.ROSLaunchParent(uuid, roslaunch1)
+    
     launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/manual_collector_async.launch"%pkg_dir])
 
     cli_arg3 = ['%s/launch/includes/start_bag_async.launch' % base_dir, 'bagfile_path:=%s' % bagfile_path]
