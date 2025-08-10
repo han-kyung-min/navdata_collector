@@ -46,7 +46,7 @@ class metadata_syncer():
 
         return matching_tgt_idx, min_time_diff, ref_tgt_matching_warn
 
-    def match_rgbd_odom_colldata( self, rgb_info, depth_info, scan_info, odom, subgoal, waypoint, joy, tf_m2o, my_time_diff = 0.1):
+    def match_rgbd_odom_colldata( self, rgb_info, depth_info, scan_info, odom, subgoal, waypoint, joy, tf_m2o, tf_m2b, my_time_diff = 0.1):
         # time_thr unit is < ms > i.e.  nsec / 10^6 )
         # reference is waypoint
         ref_data = rgb_info.copy()
@@ -63,6 +63,7 @@ class metadata_syncer():
         ref_subgoal_matching_warn = 0
         ref_joy_matching_warn = 0
         ref_m2o_matching_warn = 0
+        ref_m2b_matching_warn = 0
 
         ref_depth_time_diffs = np.zeros( [ref_size,1] )
         ref_scan_time_diffs  = np.zeros( [ref_size,1] )
@@ -71,6 +72,7 @@ class metadata_syncer():
         ref_subgoal_time_diffs = np.zeros( [ref_size,1] )
         ref_joy_time_diffs = np.zeros( [ref_size,1] )
         ref_m2o_time_diffs = np.zeros( [ref_size,1] )
+        ref_m2b_time_diffs = np.zeros( [ref_size,1] )
 
         for ref_idx in range(0, ref_size):
             ref_s = ref_data[ref_idx, 4]
@@ -119,7 +121,14 @@ class metadata_syncer():
             ref_m2o_time_diffs[ref_idx] = min_time_diff
             ref_m2o_matching_warn += ref_m2o_matching_warn_incr
 
-            corr_table[ref_idx] = [ref_idx, matching_depth_idx, matching_scan_idx, matching_odom_idx, matching_wp_idx, matching_sg_idx, matching_joy_idx, matching_m2o_idx]
+            # find the assoicated m2b data
+            tf_m2b_time = tf_m2b[:, 2] + tf_m2b[:, 3] / 10 ** 9
+            matching_m2b_idx, min_time_diff, ref_m2b_matching_warn_incr = self.associate_time(ref_idx, ref_time, my_time_diff, tf_m2b_time)
+            ref_m2b_time_diffs[ref_idx] = min_time_diff
+            ref_m2b_matching_warn += ref_m2b_matching_warn_incr
+
+            corr_table[ref_idx] = [ref_idx, matching_depth_idx, matching_scan_idx, matching_odom_idx, matching_wp_idx,
+                                   matching_sg_idx, matching_joy_idx, matching_m2o_idx, matching_m2b_idx ]
 
         if( ref_odom_matching_warn > 0):
             msg = "warning: |ref_time - odom_time| > %f for %d times \n"% (my_time_diff * 1000, ref_odom_matching_warn)
@@ -145,6 +154,14 @@ class metadata_syncer():
             msg = "warning: |ref_time - joy_time| > %f for %d times \n"% (my_time_diff * 1000, ref_joy_matching_warn)
             print('\033[33m' + msg + '\33[0m')
 
+        if( ref_m2o_matching_warn > 0):
+            msg = "warning: |ref_time - m2o_time| > %f for %d times \n"% (my_time_diff * 1000, ref_m2o_matching_warn)
+            print('\033[33m' + msg + '\33[0m')
+
+        if( ref_m2b_matching_warn > 0):
+            msg = "warning: |ref_time - m2b_time| > %f for %d times \n"% (my_time_diff * 1000, ref_m2b_matching_warn)
+            print('\033[33m' + msg + '\33[0m')
+
         print("******************************************************************************************************************* \n")
         print("ref & depth time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_depth_time_diffs)*1000, np.max(ref_depth_time_diffs)*1000, np.mean(ref_depth_time_diffs)*1000 ) )
         print("ref & scan time diff report (ms):    min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_scan_time_diffs)*1000, np.max(ref_scan_time_diffs)*1000, np.mean(ref_scan_time_diffs)*1000 ) )
@@ -153,6 +170,7 @@ class metadata_syncer():
         print("ref & subgoal time diff report (ms): min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_subgoal_time_diffs)*1000, np.max(ref_subgoal_time_diffs)*1000, np.mean(ref_subgoal_time_diffs)*1000 ) )
         print("ref & joy time diff report (ms):     min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_joy_time_diffs)*1000, np.max(ref_joy_time_diffs)*1000, np.mean(ref_joy_time_diffs)*1000 ) )
         print("ref & m2o time diff report (ms):     min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_m2o_time_diffs)*1000, np.max(ref_m2o_time_diffs)*1000, np.mean(ref_m2o_time_diffs)*1000 ) )
+        print("ref & m2b time diff report (ms):     min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(ref_m2b_time_diffs)*1000, np.max(ref_m2b_time_diffs)*1000, np.mean(ref_m2b_time_diffs)*1000 ) )
         print("******************************************************************************************************************* \n")
 
         return corr_table
@@ -436,7 +454,7 @@ class metadata_syncer():
                 waypoint = np.loadtxt( '%s/waypoints/waypoints.txt'%rawdata_dir )
                 joy = np.loadtxt('%s/joy/joy.txt' % rawdata_dir)
                 corr_table = self.match_rgbd_odom_colldata(rgb_info=rgb_info, depth_info=depth_info, scan_info=scan_info,
-                                                           odom=odom, subgoal=subgoal, waypoint=waypoint, joy=joy, tf_m2o=tf_m2o )
+                                                           odom=odom, subgoal=subgoal, waypoint=waypoint, joy=joy, tf_m2o=tf_m2o, tf_m2b=tf_m2b )
                 #corr_table = [wp_idx, matching_rgb_idx, matching_depth_idx, matching_odom_idx, matching_sg_idx, matching_joy_idx ]
 
                 corr_table_file = '%s/rgbd_odom_colldata_matches.txt' % rawdata_dir
@@ -488,6 +506,7 @@ class metadata_syncer():
                 wp_loc = next(i for i, name in enumerate(self.corr_table_members) if 'waypoint' in name)
                 joy_loc = next(i for i, name in enumerate(self.corr_table_members) if 'joy' in name)
                 tf_m2o_loc = next(i for i, name in enumerate(self.corr_table_members) if 'm2o' in name)
+                tf_m2b_loc = next(i for i, name in enumerate(self.corr_table_members) if 'm2b' in name)
 
                 # rgb_loc = 0; depth_loc = 1; scan_loc=2; odom_loc = 3; tf_m2o_loc = 4; tf_m2b_loc = 5; wp_loc = 6;  sg_loc = 7; joy_loc = 8
                 # corr_table = [rgb_idx, matching_depth_idx, matching_odom_idx, matchin_wp_idx, matching_sg_idx, matching_joy_idx ]
@@ -511,12 +530,12 @@ class metadata_syncer():
                 sync_odom_arr[ii] = sync_odom_line
                 sync_tf_m2o_line = tf_m2o[corr_table[ii][tf_m2o_loc]]
                 sync_tf_m2o_arr[ii] = sync_tf_m2o_line
-                #sync_tf_m2b_line = tf_m2b[corr_table[ii][tf_m2b_loc]]
-                #sync_tf_m2b_arr[ii] = sync_tf_m2b_line
+                sync_tf_m2b_line = tf_m2b[corr_table[ii][tf_m2b_loc]]
+                sync_tf_m2b_arr[ii] = sync_tf_m2b_line
 
             np.savetxt(sync_odom_file, sync_odom_arr)
             np.savetxt(sync_tf_m2o_file, sync_tf_m2o_arr)
-            #np.savetxt(sync_tf_m2b_file, sync_tf_m2b_arr)
+            np.savetxt(sync_tf_m2b_file, sync_tf_m2b_arr)
 
             # process colldata sync if necesssary
             # corr_table = [wp_idx, matching_depth_idx, matching_odom_idx, matching_sg_idx, matching_joy_idx]

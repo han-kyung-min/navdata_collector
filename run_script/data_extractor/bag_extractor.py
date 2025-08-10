@@ -439,6 +439,12 @@ class bag_extractor():
 
                 self.bag = rosbag.Bag(bagfile)
 
+                # copy slam map if exist
+                data_file = glob.glob('%s/*data'%self.bagfile_path)
+                pgo_file = glob.glob('%s/*.posegraph'%self.bagfile_path)
+                shutil.copy(data_file[0], '%s/map.data'%bag_extraction_path)
+                shutil.copy(pgo_file[0], '%s/map.posegraph'%bag_extraction_path)
+
                 out_traj_path   = '%s/traj' % (bag_extraction_path)
                 out_depth_path  = '%s/depth'% (bag_extraction_path)
                 out_rgb_path    = '%s/rgb'  % (bag_extraction_path)

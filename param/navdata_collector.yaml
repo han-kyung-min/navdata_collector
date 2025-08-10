@@ -26,8 +26,8 @@ navdata_collector:
     global_height:      2048
     
 navdata_extractor:
-    inpath:             "/media/results/navdata_collector/former29/2025-08-07-14-20"   # train
-    outpath:            "/media/results/navdata_collector/processed"                   # train
+    inpath:             "/media/results/navdata_collector/topomap/2025-08-09-17-47"   # train
+    outpath:            "/media/results/navdata_collector/topomap/processed"                   # train
     #inpath:             "/media/results/navdata_collector/collision_data/2025-07-13-17-41"         # deployment
     #outpath:            "/media/results/navdata_collector/collision_data/processed"                # deployment
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
@@ -40,8 +40,8 @@ navdata_extractor:
     map_topic:          "/map"
     tf_topic:           "/tf"
     
-colldata_extractor:
-    curr_rel_sg_topic:  "/curr_rel_subgoal"  # relative coord w.r.t base_link (It is the odom pose from topo map. NOT the predicted dist from the model)
-    waypoint_topic:     "/waypoint"          # relative coord w.r.t base_link
-    joy_topic:          "/joy"               # joy msg
+#colldata_extractor:
+    #curr_rel_sg_topic:  "/curr_rel_subgoal"  # relative coord w.r.t base_link (It is the odom pose from topo map. NOT the predicted dist from the model)
+    #waypoint_topic:     "/waypoint"          # relative coord w.r.t base_link
+    #joy_topic:          "/joy"               # joy msg
     

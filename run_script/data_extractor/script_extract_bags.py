@@ -40,8 +40,8 @@ def main(argv):
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
 
-    #data_handler = bag_extractor(name='rosbag_data_extractor', **config)
-    #data_handler.runExtractor()
+    data_handler = bag_extractor(name='rosbag_data_extractor', **config)
+    data_handler.runExtractor()
     parent.shutdown()
 
     print("data extraction is done. \nstart syncing the data")
