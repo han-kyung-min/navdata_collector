@@ -26,7 +26,7 @@ navdata_collector:
     global_height:      2048
     
 navdata_extractor:
-    inpath:             "/media/glab/FetchSSD/results/navdata_collector/topomap/2025-08-10-12-10"   # train
+    inpath:             "/media/glab/FetchSSD/results/navdata_collector/topomap/2025-08-11-09-53"   # train
     outpath:            "/media/glab/FetchSSD/results/navdata_collector/topomap/processed"                   # train
     #inpath:             "/media/results/navdata_collector/collision_data/2025-07-13-17-41"         # deployment
     #outpath:            "/media/results/navdata_collector/collision_data/processed"                # deployment

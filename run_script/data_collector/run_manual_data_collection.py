@@ -21,6 +21,57 @@ import roslaunch
 
 import signal, subprocess, select
 
+from geometry_msgs.msg import PoseWithCovarianceStamped, Quaternion
+from tf import TransformListener
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
+import math
+
+def save_initial_pose(output_file="initial_pose.yaml",
+                      publish_now=True,
+                      frame_map="map",
+                      frame_base="base_link"):
+    tf_listener = TransformListener()
+
+    rospy.loginfo("Waiting for TF %s -> %s..." % (frame_map, frame_base))
+    tf_listener.waitForTransform(frame_map, frame_base, rospy.Time(0), rospy.Duration(10.0))
+
+    (trans, rot) = tf_listener.lookupTransform(frame_map, frame_base, rospy.Time(0))
+    roll, pitch, yaw = euler_from_quaternion(rot)
+
+    pose_data = {
+        "frame_id": frame_map,
+        "x": float(trans[0]),
+        "y": float(trans[1]),
+        "yaw": float(yaw)
+    }
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+    with open(output_file, "w") as f:
+        yaml.dump(pose_data, f, default_flow_style=False)
+
+    rospy.loginfo("Saved initial pose to %s" % os.path.abspath(output_file))
+    rospy.loginfo("Pose: x=%.3f, y=%.3f, yaw=%.3f rad" %
+                  (pose_data["x"], pose_data["y"], pose_data["yaw"]))
+
+    if publish_now:
+        pub = rospy.Publisher("/initialpose", PoseWithCovarianceStamped, queue_size=1, latch=True)
+        rospy.sleep(1.0)
+        qx, qy, qz, qw = quaternion_from_euler(0.0, 0.0, pose_data["yaw"])
+        msg = PoseWithCovarianceStamped()
+        msg.header.frame_id = frame_map
+        msg.header.stamp = rospy.Time.now()
+        msg.pose.pose.position.x = pose_data["x"]
+        msg.pose.pose.position.y = pose_data["y"]
+        msg.pose.pose.orientation = Quaternion(qx, qy, qz, qw)
+
+        cov = [0.0] * 36
+        cov[0] = cov[7] = 0.25
+        cov[35] = (10.0 * math.pi/180.0) ** 2
+        msg.pose.covariance = cov
+        pub.publish(msg)
+        rospy.loginfo("Published /initialpose")
+
+    return pose_data
+
 def save_slamtoolbox_maps_cli(base_path, slam_ns="/slam_toolbox"):
     serialize_srv = slam_ns + "/serialize_map"
     savemap_srv   = slam_ns + "/save_map"
@@ -41,6 +92,9 @@ def shutdown_and_wait(launch_obj, name):
             time.sleep(0.1)  # short poll, no long sleeps
     except Exception as e:
         print(f"[WARN] Failed to shutdown {name}: {e}")
+
+
+
 
 def main(argv):
 
@@ -133,6 +187,14 @@ def main(argv):
         rgbd_msg = rospy.wait_for_message('rgbd_throttle/rgbd', rgbd, timeout=None)
         
         print("<%d>th Bagging started \n"%round_idx )
+
+        init_pose_file = '%s/init_pose.yaml'%bagfile_path
+        pose = save_initial_pose(
+            output_file=init_pose_file,
+            publish_now=True,
+            frame_map="map",
+            frame_base="base_link"
+        )
 
         while True:
             ch = key_pressed()

@@ -12,6 +12,7 @@ import tf2_ros
 import tf
 import datetime
 import shutil
+import math
 
 from std_srvs.srv import Empty
 from std_msgs.msg import Bool
@@ -20,6 +21,9 @@ from navdata_collector.msg import rgbd
 
 import roslaunch
 import argparse
+
+from geometry_msgs.msg import PoseWithCovarianceStamped, Quaternion
+from tf.transformations import quaternion_from_euler
 
 # Joystick trigger config
 DEADMAN_BUTTON = 4   # Change if needed
@@ -31,6 +35,51 @@ joy_msg = None
 trigger_time = None
 reached_goal_msg = None
 finish_flag = None
+
+#def _prefix(path):
+    #return os.path.splitext(path)[0] if path.endswith((".posegraph",".data")) else path
+
+def reset_ekf_to_zero(srv_name="/set_pose"):
+    rospy.wait_for_service(srv_name, timeout=10.0)
+    from robot_localization.srv import SetPose
+    set_pose = rospy.ServiceProxy(srv_name, SetPose)
+    msg = PoseWithCovarianceStamped()
+    msg.header.frame_id = "odom"
+    msg.pose.pose.orientation = Quaternion(0,0,0,1)
+    cov = [0.0]*36
+    cov[0]=cov[7]=1e-6; cov[14]=cov[21]=cov[28]=1e6; cov[35]=1e-6
+    msg.pose.covariance = cov
+    set_pose(msg)
+    rospy.loginfo("EKF odom reset to 0,0,0.")
+
+def reset_slam_pose(topomap_dir, ns="/slam_toolbox", mapping_mode=True):
+    """
+    Set params so SLAM Toolbox starts at your saved init pose in MAPPING mode.
+    Call this BEFORE launching slam_toolbox.
+    """
+    init_yaml = '%s/init_pose.yaml'%topomap_dir
+    with open(init_yaml, "r") as f:
+        cfg = yaml.safe_load(f)
+    x = float(cfg["x"]); y = float(cfg["y"]); yaw = float(cfg["yaw"])
+
+    pfx = '%s/map'%topomap_dir  #_prefix(posegraph)
+    if not (os.path.isfile(pfx+".posegraph") and os.path.isfile(pfx+".data")):
+        raise IOError("Missing map files: %s.posegraph / %s.data" % (pfx, pfx))
+
+    def P(k): return ns.rstrip("/") + "/" + k
+
+    # Load serialized map and seed pose
+    rospy.set_param(P("map_file_name"), pfx)             # prefix (no extension)
+    rospy.set_param(P("map_start_pose"), [x, y, yaw])    # x, y, yaw(rad)
+    rospy.set_param(P("map_start_at_dock"), False)       # don't override with Node0
+
+    # Choose mode: mapping vs localization
+    rospy.set_param(P("localization"), not mapping_mode) # False => mapping
+    rospy.set_param(P("enable_interactive_mode"), False)
+    rospy.sleep(0.1)
+    
+    return {"x": x, "y": y, "yaw": yaw, "prefix": pfx, "ns": ns}
+
 
 def joy_callback(msg):
     global joy_msg
@@ -47,12 +96,20 @@ def finish_callback(msg):
 def main(argv):
     
     parser = argparse.ArgumentParser()
-    parser.add_argument("--map_file_name", type=str, required=True, help="Base path to saved map (no extension)")
-    args = parser.parse_args(argv[1:])
+    parser.add_argument(
+        "--topomap_dir",
+        type=str,
+        required=True,
+        help="Base path to saved map (no extension)"
+    )
 
-    map_base = args.map_file_name
-    
+    args = parser.parse_args(argv[1:])
+    topomap_dir = args.topomap_dir
+
+    map_base = '%s/map'%topomap_dir
+    init_pose_file = '%s/init_pose'%topomap_dir
     print("map_file_name: %s"%map_base)
+    print("init_pose file: %s"%init_pose_file )
     
     global joy_msg, trigger_time, reached_goal_msg
     
@@ -145,6 +202,15 @@ def main(argv):
     t = rospy.Time(0)
     (trans, rot) = listener.lookupTransform("odom", "base_link", t)
 
+    if rospy.has_param("/slam_toolbox"):
+        rospy.delete_param("/slam_toolbox")
+        rospy.sleep(0.1)  # tiny guard
+
+    #reset_ekf_to_zero()
+    #time.sleep(0.2)
+    #init_pose_yaml = rospy.get_param("~init_pose_file", init_pose_file)                          
+    #reset_slam_pose(topomap_dir=topomap_dir, ns="/slam_toolbox", mapping_mode=True)
+    
     launch2.start()
     rospy.wait_for_message('navdata_collector_is_initialized', Bool, timeout=None)
 
