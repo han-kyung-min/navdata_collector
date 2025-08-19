@@ -57,10 +57,10 @@ def reset_slam_pose(topomap_dir, ns="/slam_toolbox", mapping_mode=True):
     Set params so SLAM Toolbox starts at your saved init pose in MAPPING mode.
     Call this BEFORE launching slam_toolbox.
     """
-    init_yaml = '%s/init_pose.yaml'%topomap_dir
-    with open(init_yaml, "r") as f:
-        cfg = yaml.safe_load(f)
-    x = float(cfg["x"]); y = float(cfg["y"]); yaw = float(cfg["yaw"])
+    slam_pose_file = '%s/slam_pose.txt'%topomap_dir
+    poses = np.loadtxt(slam_pose_file)
+    [x, y, yaw] = poses[0][1:]
+    print("Pose @ node 0:  (%f  %f  %f) \n"%(x, y, yaw) )
 
     pfx = '%s/map'%topomap_dir  #_prefix(posegraph)
     if not (os.path.isfile(pfx+".posegraph") and os.path.isfile(pfx+".data")):
@@ -70,7 +70,7 @@ def reset_slam_pose(topomap_dir, ns="/slam_toolbox", mapping_mode=True):
 
     # Load serialized map and seed pose
     rospy.set_param(P("map_file_name"), pfx)             # prefix (no extension)
-    rospy.set_param(P("map_start_pose"), [x, y, yaw])    # x, y, yaw(rad)
+    rospy.set_param(P("map_start_pose"), [float(x), float(y), float(yaw)])    # x, y, yaw(rad)
     rospy.set_param(P("map_start_at_dock"), False)       # don't override with Node0
 
     # Choose mode: mapping vs localization
@@ -209,7 +209,7 @@ def main(argv):
     #reset_ekf_to_zero()
     #time.sleep(0.2)
     #init_pose_yaml = rospy.get_param("~init_pose_file", init_pose_file)                          
-    #reset_slam_pose(topomap_dir=topomap_dir, ns="/slam_toolbox", mapping_mode=True)
+    reset_slam_pose(topomap_dir=topomap_dir, ns="/slam_toolbox", mapping_mode=True)
     
     launch2.start()
     rospy.wait_for_message('navdata_collector_is_initialized', Bool, timeout=None)
