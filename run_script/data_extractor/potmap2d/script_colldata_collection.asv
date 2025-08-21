@@ -1,0 +1,276 @@
+% script  trajectory data collection
+
+clear all; close all; clc;
+
+% source folder
+pkg_dir = fileparts( fileparts( fileparts(pwd) ) ) ;
+config_file = sprintf('%s/param/navdata_collector.yaml',pkg_dir);
+config = ReadYaml(config_file) ;
+base_dir = '/media/results/navdata_collector/collision_data/processed' ;
+
+bag_dirs = dir( sprintf('%s/20*/bag_*', base_dir) ) ;
+out_base_dir = sprintf('/media/data/mydata/former_datasets/colldata');
+% write readme.txt file
+fid = fopen( sprintf('%s/readme.txt', out_base_dir), 'w') ;
+fprintf(fid, 'Collision data info. They are all defined w.r.t current robot pose\n') ;
+fprintf(fid, 'corrected_waypoints_m.txt: \t  x, y, qw, qz \n') ;
+fprintf(fid, 'pred_waypoints_m.txt:      \t  x, y, qw, qz \n') ;
+fprintf(fid, 'pose_context_m.txt:        \t  x, y, 0, qw, qx, qy, qz\n') ;
+fprintf(fid, 'subgoals_m.txt:            \t  x_old, y_old, 0, 0\n x_corr, y_corr, qw, qz\n ') ;
+fclose(fid) ;
+
+topomap_dir = '/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/round10-1' ;
+
+% load topomap
+topo_odom_file = sprintf('%s/topo_odom.txt', topomap_dir) ;
+topo_m2b_file = sprintf('%s/topo_tf_m2b.txt', topomap_dir) ;
+topo_m2o_file = sprintf('%s/topo_tf_m2o.txt', topomap_dir) ;
+[ ] = load_pose_data(topo) 
+
+sync_metadata_dir = '/media/results/navdata_collector/collision_data/processed/coll_2025-08-21-11-14/bag_2025-08-21-11-14-04/synced' ;
+str_split = split(sync_metadata_dir, '/') ;
+navtime_id = str_split{end} ;
+
+colldata_dir = sprintf('%s/%s', out_base_dir, navtime_id) ; 
+
+if isdir(colldata_dir)
+    rmdir(colldata_dir, 's') ;
+end
+mkdir(colldata_dir) ;
+
+
+
+eta = 1.0 ;             % Repulsive potential scaling factor (η)
+rho0 = 1.2 / 0.05 ;     % Influence distance (ρ0, # grids )
+obs_thr = 99 ;
+fps = 10 ;
+ws = 3 ;
+
+resolution = 0.05 ;
+map_size_m = 10.0 ;
+robot_radius_m = 0.25 ;
+inflation_radius_m = 1.0 ;
+max_range_m = 25;
+
+cm_params = struct('resolution', resolution, 'map_size_m', map_size_m, 'robot_radius_m', robot_radius_m, ...
+    'inflation_radius_m', inflation_radius_m, 'max_range_m', max_range_m ) ;
+
+% robot pose 
+odom = load(sprintf("%s/sync_odom.txt", sync_metadata_dir)) ;
+[num_data, c] = size(odom) ;
+px = odom(:,5) ;
+py = odom(:,6) ;
+quats = odom(:,8:11) ;
+px_min = min(px) ;
+px_max = max(px) ;
+py_min = min(py) ;
+py_max = max(py) ;
+
+% load waypoints
+waypoints = load(sprintf('%s/sync_waypoints.txt', sync_metadata_dir)) ;
+
+%% === Step 2: Compute ρ(q) = distance to the nearest obstacle ===
+% bwdist() returns the Euclidean distance in pixels from each free cell
+% to the nearest obstacle cell.
+
+% load subgoal
+subgoals = load(sprintf('%s/sync_rel_subgoals.txt', sync_metadata_dir)) ;
+data_cnt = 0;
+
+
+for data_idx = 1:num_data
+
+    %% === 1. Read metadata == %%
+    waypt_line = waypoints(data_idx,:) ;
+    joy_on = waypt_line(5) ;
+
+    if ~joy_on % skip if joy button (deadman switch) is not pressed
+        continue ;
+    end
+
+    % We go ahead do the data collection if the joy msg is on
+
+    rgb_img = imread(sprintf('%s/rgb%05d.png', sync_metadata_dir, data_idx )) ;
+    waypt_traj_px = reshape( waypt_line([8,9, 12,13, 16,17, 20, 21, 24,25]), 2, 5)' / resolution ; 
+    tgt_wx_px = waypt_traj_px(2,1) ; % 2nd wpt
+    tgt_wy_px = waypt_traj_px(2,2)  ; % 
+    attr_ang_rad = atan2(tgt_wy_px, tgt_wx_px) ;
+
+    scandata = load(sprintf('%s/scan%05d.txt', sync_metadata_dir, data_idx-1) ) ;
+    ranges = scandata(:,2) ;
+    angles = scandata(:,1) ;
+
+    sg_px = subgoals(data_idx, 5:6) / resolution ;  % relative subgoal 
+    
+    map_size_px = map_size_m / resolution ; 
+    rx = map_size_px / 2 ;  % robot position (center of the map)
+    ry = rx ;
+
+    %% === 2. Build costmap === %%
+    [costmap_i8, costmap_u8] = build_costmap( ranges, angles, cm_params) ;
+    ukn_idx = find(costmap_i8 == -1) ;
+    obstacle_mask = costmap_i8 >= obs_thr;
+    rho = bwdist(obstacle_mask) ; %resolution;  % ρ(q) in meters
+    
+    %% === 3. Compute Repulsive Potential U_rel(q) ===
+    % U_rep(q) = 0.5 * η * (1/ρ(q) - 1/ρ0)^2 if ρ(q) <= ρ0, else 0.
+    Urep = zeros(size(rho));
+    mask = (rho <= rho0) & (rho > 0);  % Valid region of influence
+    Urep(mask) = 0.5 * eta * (1 ./ rho(mask) - 1/rho0).^2;
+    
+    %% === 4: Compute the Rep Potential Fields (force direction) ===
+    % ∇ρ(q) points outward from obstacles. Normalize it to get direction.
+    [dRhoX, dRhoY] = gradient(rho, 1);  % Derivatives of ρ(q)
+    grad_norm = sqrt(dRhoX.^2 + dRhoY.^2) + 1e-8;
+    dir_x = dRhoX ./ grad_norm;   % Unit vector in x-direction
+    dir_y = dRhoY ./ grad_norm;   % Unit vector in y-direction
+    
+    % F_rel(q) = η * (1/ρ(q) - 1/ρ0) * (1/ρ(q)^2) * ∇ρ(q)
+    Frx = zeros(size(rho));
+    Fry = zeros(size(rho));
+    Fr_magnitude = eta * (1 ./ rho(mask) - 1/rho0) ./ (rho(mask).^2);
+    Frx(mask) = Fr_magnitude .* dir_x(mask);
+    Fry(mask) = Fr_magnitude .* dir_y(mask);   
+    angle_map = rad2deg(atan2(Fry, Frx)) ;
+
+    [costmap_roi, angle_map_roi, roi_front_px, roi_back_px] = set_roi(costmap_i8,  angle_map, cm_params) ;
+
+    % roi flow
+    val_roi_idx = find(costmap_roi >= 0) ;
+    roi_repflow_deg = median( angle_map_roi(val_roi_idx) ) ;
+    roi_repflow_rad = roi_repflow_deg * pi / 180 ;
+    attr_flow_deg = attr_ang_rad * 180 / pi ;
+    roi_repflow_u = cos(roi_repflow_rad ) ;
+    roi_repflow_v = sin(roi_repflow_rad ) ;
+
+    %% === Step 5: plotting  === %%  
+    arrow_step = 1; arrow_scale = 20;
+
+    fig = figure(4); clf;
+    fig.Position = [2800, 400, 1400, 640] ;
+    t = tiledlayout(1, 2, 'TileSpacing', 'compact', 'Padding', 'compact');
+    nexttile(t, 1);
+    imshow(rgb_img) ;
+
+    nexttile(t, 2);
+    imagesc( costmap_i8 );  % Show potential field as a heatmap
+    colormap('gray')
+    hold on;
+    
+    plot( rx + waypt_traj_px(:,1) * 100 , ry + waypt_traj_px(:,2) * 100, 'ys', 'MarkerFaceColor','y') ;
+    plot( rx + sg_px(1), rx + sg_px(2),  'ms', 'MarkerSize',12 , 'MarkerFaceColor', 'm') ;
+    if (joy_on)
+        rectangle('position', [rx - roi_back_px, ry - roi_front_px / 2, roi_front_px, roi_front_px], 'EdgeColor', [1,0,1] ) ;
+        plot( rx, ry, 'c.', 'MarkerSize', 48 ) ;
+    else
+        rectangle('position', [rx - roi_back_px, ry - roi_front_px / 2, roi_front_px, roi_front_px], 'EdgeColor', [1,0,0] ) ;
+        plot( rx, ry, 'r.', 'MarkerSize', 48 ) ;
+    end
+
+    colorbar; 
+    title( sprintf('Collision data @ data idx: %d ,  # Collected Data: %d ', data_idx, data_cnt)) ;
+    hold on;
+    
+    h2 = quiver( rx+5, ry, roi_repflow_u * arrow_scale, roi_repflow_v * arrow_scale, 'r') ;
+    set(h2, 'AutoScale', 'on', 'AutoScaleFactor', 1, 'LineWidth',2, 'MaxHeadSize', 12) ;
+    lgd = legend('Pred Waypts','SG', 'Robot', 'F_{rep}', 'Location', 'NW')
+    lgd.Color = [0.8 0.8 0.8];
+
+
+    %% == 6. Data collection from expert's choice == %%
+
+    [gx, gy] = ginput(1) ;
+    if (gx <0 | gx > map_size_px | gy < 0 | gy > map_size_px)
+        continue;  % if the pred waypoint is OK. Don't bother
+    end
+
+    set(gcf, 'pointer', 'crosshair'); 
+    set(gcf, 'pointer', 'arrow');
+    P0 = [rx, ry] ; 
+    P2 = [gx, gy] ;
+
+    % Compute the corrected waypoints
+    [out_waypts, target_waypoint] = sample_corrected_waypoints(P0, P2, resolution, fps, ws) ;
+    plot( out_waypts(:,1) + rx, out_waypts(:,2) + rx, 'gs', 'MarkerFaceColor', 'g') ;
+
+    %% == 7. Store data == %%
+    out_dir = sprintf('%s/data%05d',colldata_dir, data_cnt) ;
+    if (isdir(out_dir))
+        rmdir(out_dir, 's') ;
+    end
+    mkdir(out_dir) ;
+    
+    context_idxs = [ data_idx-4*ws:ws:data_idx ] ;
+    % (1) save prev robot pose 
+    % robot pose w.r.t curr robot pose
+    quat = quats(context_idxs, :) ;  % qx qy qz qw
+    nc = length(context_idxs) ;
+    wHr = zeros(4,4, nc) ;
+
+    for qidx=1:nc
+        q = quat(qidx, [end, 1:end-1]) ;  % qw, qx, qy, qz
+        wHr(:,:,qidx) = quat_to_htm( q ) ;
+        didx = context_idxs(qidx) ;
+        wHr(1:2,4,qidx) = [ px(didx), py(didx) ] ;
+    end
+
+    rcHr = zeros(4,4,nc) ; 
+    rcHr(:,:,end) = wHr(:,:,end) ;
+    
+    fid = fopen( sprintf('%s/pose_context_m.txt', out_dir) , 'w') ;
+    for ii=1:nc
+        rcHr(:,:,ii) = inv(wHr(:,:,end)) * wHr(:,:,ii) ;
+        x_prev_m = rcHr(1,4,ii) * resolution ; % m
+        y_prev_m = rcHr(2,4,ii) * resolution ;
+        q = htm_to_quat( rcHr(:,:,ii) ) ; 
+        fprintf( fid, '%6.4f %6.4f %6.4f %6.4f %6.4f %6.4f %6.4f\n', [ x_prev_m y_prev_m 0 q(:)']' ) ; % x y z qw qx qy qz
+    end
+    fclose(fid);
+
+    % (2) save rgb and depth images
+    for cidx = 1 : length(context_idxs)
+        src_rgb = sprintf('%s/rgb%05d.png', sync_metadata_dir, context_idxs(cidx) )  ;
+        src_dep = sprintf('%s/depth%05d.png', sync_metadata_dir, context_idxs(cidx) )  ;
+        copyfile(src_rgb, sprintf('%s/', out_dir) ) ;
+        copyfile(src_dep, sprintf('%s/', out_dir) ) ;
+    end
+    
+    % (3) save costmap
+    fid = fopen( sprintf('%s/costmap_info.txt', out_dir), 'w' ) ;
+    fprintf(fid, 'resolution, map_size_px \n %f %d ', resolution, map_size_px) ;
+    writematrix( costmap_i8, sprintf('%s/costmap_i8.txt', out_dir ) ) ;
+
+    % (4) save corrected waypoint
+    out_waypts_m = out_waypts; 
+    out_waypts_m(:,1:2) =  out_waypts_m(:,1:2)* resolution ;
+    fid = fopen( sprintf('%s/corrected_waypoints_m.txt', out_dir), 'w' ) ;
+    fprintf( fid, '%6.4f %6.4f %6.4f %6.4f \n', out_waypts_m' ) ; 
+    fclose(fid) ;
+
+    % (5) save pred waypoints
+    pred_waypts_m = reshape( waypt_line(8:end), 4, nc)' ;
+    fid = fopen( sprintf('%s/pred_waypoints_m.txt', out_dir), 'w') ;
+    fprintf( fid, '%6.4f %6.4f %6.4f %6.4f \n', pred_waypts_m') ;
+    fclose(fid) ;
+
+    % (6) save context idx
+    fid = fopen( sprintf('%s/context_index.txt', out_dir), 'w') ;
+    fprintf(fid, '%d ', context_idxs);
+    fclose(fid) ;
+
+    % (7) save SGs
+    dx = gx - rx ;   % wpt1  should heading to wpt2
+    dy = gy - ry ;
+    theta = atan2(dy, dx) ;  % radians
+    half_theta = theta / 2 ;
+    q = [cos(half_theta), zeros(size(theta)), zeros(size(theta)), sin(half_theta)] ;
+    q = q / norm(q) ; % subgoal orient
+    
+    fid = fopen( sprintf('%s/subgoals_m.txt', out_dir), 'w') ; % old, corrected
+    fprintf(fid, '%6.4f %6.4f 0 0 \n%6.4f %6.4f %6.4f %6.4f\n', sg_px(1) * resolution, sg_px(1) * resolution,...
+                                                        dx*resolution, dy*resolution, q(1), q(4) ) ;
+    fclose(fid) ;
+
+    data_cnt = data_cnt + 1 ;
+
+end

@@ -55,7 +55,7 @@ class bag_extractor():
                 print("unknown image type\n")
                 raise NotImplementedError
 
-        self.config_colldata_extractor = kwargs.get('colldata_extractor')
+        self.config_colldata_extractor = kwargs['colldata_extractor']['enabled']
         if self.config_colldata_extractor:
             print("\033[38;5;208mCollision data extraction mode is on\033[0m")
             self.curr_rel_sg_topic = kwargs['colldata_extractor']['curr_rel_sg_topic']
@@ -374,6 +374,7 @@ class bag_extractor():
                 # print("Encoding of the frames: {}".format(msg.encoding))
                 pbar.update(1)
                 is_joy_on = msg.joystick.data
+                curr_sg_idx = msg.sg_idx
                 data_raw = np.array(msg.waypoints.data, dtype=np.float32)
                 dims = msg.waypoints.layout.dim
                 rows = dims[0].size
@@ -384,6 +385,7 @@ class bag_extractor():
                 # write info
                 f.write("%d %d %d %d " % (cnt, msg.header.seq, msg.header.stamp.secs, msg.header.stamp.nsecs))
                 f.write("%d " % (is_joy_on))
+                f.write("%d " % (curr_sg_idx))
                 f.write('%f %f '% (xy_dist, orient_dist))
                 for ii in range(0, rows):
                     x, y, qw, qz = np_waypoint[ii]
@@ -442,8 +444,10 @@ class bag_extractor():
                 # copy slam map if exist
                 data_file = glob.glob('%s/*data'%self.bagfile_path)
                 pgo_file = glob.glob('%s/*.posegraph'%self.bagfile_path)
-                shutil.copy(data_file[0], '%s/map.data'%bag_extraction_path)
-                shutil.copy(pgo_file[0], '%s/map.posegraph'%bag_extraction_path)
+                if data_file:
+                    shutil.copy(data_file[0], '%s/map.data'%bag_extraction_path)
+                if pgo_file:
+                    shutil.copy(pgo_file[0], '%s/map.posegraph'%bag_extraction_path)
 
                 out_traj_path   = '%s/traj' % (bag_extraction_path)
                 out_depth_path  = '%s/depth'% (bag_extraction_path)
