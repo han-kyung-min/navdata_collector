@@ -2,6 +2,7 @@
 import nav_msgs.msg
 import sensor_msgs.msg
 import rospy
+import rospkg
 import sys
 import os
 import yaml
@@ -98,11 +99,17 @@ def shutdown_and_wait(launch_obj, name):
 
 def main(argv):
 
-    base_dir = os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))))
-    #    config_file = '/home/hankm/catkin_ws/src/navdata_collector/param/navdata_collector.yaml'
-    pkg_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../'))
+    pkg = 'navdata_collector'
+    share_path = rospkg.RosPack().get_path(pkg)              # …/install/share/navdata_collector
+    install = os.path.dirname(os.path.dirname(share_path))  # …/install (or …/devel)
+    base_dir = os.path.dirname(install)              # …/catkin_ws
+    pkg_dir = os.path.join(base_dir, 'src', pkg)  
 
-    config_file = '%s/param/navdata_collector.yaml' % base_dir    
+    #base_dir = os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))))
+    #    config_file = '/home/hankm/catkin_ws/src/navdata_collector/param/navdata_collector.yaml'
+    #pkg_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../'))
+
+    config_file = '%s/param/navdata_collector.yaml' % pkg_dir    
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
 

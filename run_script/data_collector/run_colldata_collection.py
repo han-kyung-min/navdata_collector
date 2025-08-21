@@ -57,7 +57,7 @@ def reset_slam_pose(topomap_dir, ns="/slam_toolbox", mapping_mode=True):
     Set params so SLAM Toolbox starts at your saved init pose in MAPPING mode.
     Call this BEFORE launching slam_toolbox.
     """
-    slam_pose_file = '%s/slam_pose.txt'%topomap_dir
+    slam_pose_file = '%s/slam_poses.txt'%topomap_dir
     poses = np.loadtxt(slam_pose_file)
     [x, y, yaw] = poses[0][1:]
     print("Pose @ node 0:  (%f  %f  %f) \n"%(x, y, yaw) )

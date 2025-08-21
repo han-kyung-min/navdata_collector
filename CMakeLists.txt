@@ -134,7 +134,8 @@ target_link_libraries(dump_posegraph toolbox_common ${catkin_LIBRARIES} ${Boost_
 #############
 
 
-catkin_install_python(PROGRAMS nodes/slam_publisher_node.py
+catkin_install_python(PROGRAMS  nodes/slam_publisher_node.py 
+                                run_script/data_collector/run_manual_data_collection.py
                         DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
 
 install(TARGETS navdata_collector_node 
