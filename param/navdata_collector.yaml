@@ -28,7 +28,7 @@ navdata_collector:
 navdata_extractor:
     #inpath:             "/media/glab/FetchSSD/results/navdata_collector/topomap/2025-08-11-09-53"   # train
     #outpath:            "/media/glab/FetchSSD/results/navdata_collector/topomap/processed"                   # train
-    inpath:             "/media/results/navdata_collector/collision_data/2025-08-21-11-14"         # deployment
+    inpath:             "/media/results/navdata_collector/collision_data/2025-08-21-18-33"         # deployment
     outpath:            "/media/results/navdata_collector/collision_data/processed"                # deployment
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"

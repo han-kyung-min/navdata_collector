@@ -22,7 +22,8 @@ function [costmap_i8, costmap_u8 ] = build_costmap(ranges, angles, cm_params)
     half_map = map_size_px / 2;
 
     % === Convert scan to local frame ===
-    x_local = ranges .* cos(angles);
+    angles = -angles ; % CCW scan (right --> front --> left )
+    x_local = ranges .* cos(angles);  
     y_local = ranges .* sin(angles);
 
     % === Map scan to grid indices ===

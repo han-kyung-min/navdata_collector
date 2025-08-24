@@ -108,7 +108,7 @@ class bag_extractor():
 
         if self.config_colldata_extractor:
             f.write('rel_subgoal.txt contains:  idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw \n')
-            f.write('waypoint.txt contains:     idx, seq, time(s), time(ns), is_joy_on, xy_dist, orient_dist, px1, py1, qw1, qz2, px2, py2, qw2, qz2, ... \n')
+            f.write('waypoint.txt contains:     idx, seq, time(s), time(ns), is_joy_on, curr_sg_idx(of topo nodes), xy_dist, orient_dist, px1, py1, qw1, qz2, px2, py2, qw2, qz2, ... \n')
             f.write('joy.txt contains:          idx, seq, time(s), time(ns), axis0, axis1,...,axis7, button0, button1, ..., button12 \n'  )
 
     def extractRGBD(self, bag, out_rgb_path, out_depth_path):
@@ -374,7 +374,7 @@ class bag_extractor():
                 # print("Encoding of the frames: {}".format(msg.encoding))
                 pbar.update(1)
                 is_joy_on = msg.joystick.data
-                curr_sg_idx = msg.sg_idx
+                curr_sg_idx = msg.sg_idx.data
                 data_raw = np.array(msg.waypoints.data, dtype=np.float32)
                 dims = msg.waypoints.layout.dim
                 rows = dims[0].size
