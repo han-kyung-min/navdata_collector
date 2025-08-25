@@ -128,6 +128,10 @@ def main(argv):
         shutil.rmtree(bagfile_path)
     os.mkdir(bagfile_path)
 
+    data_type_file = os.path.join(bagfile_path, "coll_data")
+    data_type_file = Path(data_type_file)  # convert str to Path
+    data_type_file.touch(exist_ok=True)
+
     uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
     roslaunch.configure_logging(uuid)
 

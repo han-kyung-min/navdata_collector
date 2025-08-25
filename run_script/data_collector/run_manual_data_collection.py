@@ -13,6 +13,7 @@ import tf2_ros
 import tf
 import datetime
 import shutil
+from pathlib import Path
 
 from std_srvs.srv import Empty
 from std_msgs.msg import Bool
@@ -99,17 +100,16 @@ def shutdown_and_wait(launch_obj, name):
 
 def main(argv):
 
+    home_dir = os.path.expanduser("~")
+    catkin_dir = os.path.join(home_dir, "catkin_ws")
     pkg = 'navdata_collector'
     share_path = rospkg.RosPack().get_path(pkg)              # …/install/share/navdata_collector
-    install = os.path.dirname(os.path.dirname(share_path))  # …/install (or …/devel)
-    base_dir = os.path.dirname(install)              # …/catkin_ws
-    pkg_dir = os.path.join(base_dir, 'src', pkg)  
+    #install = os.path.dirname(os.path.dirname(share_path))  # …/install (or …/devel)
+    #base_dir = os.path.dirname(install)              # …/catkin_ws
+    pkg_lib_dir = os.path.join(catkin_dir, 'install/lib', pkg)
+    pkg_share_dir = os.path.join(catkin_dir, 'install/share', pkg)
 
-    #base_dir = os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))))
-    #    config_file = '/home/hankm/catkin_ws/src/navdata_collector/param/navdata_collector.yaml'
-    #pkg_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../../'))
-
-    config_file = '%s/param/navdata_collector.yaml' % pkg_dir    
+    config_file = '%s/param/navdata_collector.yaml' % pkg_share_dir
     with open(config_file, "r") as f:
         config = yaml.safe_load(f)
 
@@ -132,8 +132,6 @@ def main(argv):
     num_explorations = config['navdata_collector']['max_num_bagfiles']
     max_time_per_round = config['navdata_collector']['max_time_per_round']
     max_nav_time = config['navdata_collector']['max_nav_time']
-
-    catkin_dir = "%s/../"%pkg_dir
 
     print("waiting for core msgs ...  \n")
     try:
@@ -166,14 +164,16 @@ def main(argv):
     #last_time = start #time.time()
 
     for round_idx in range(0, num_explorations):
-        # make data dir
+
+            # make data dir
         # launch files
         last_time = time.time()
         roslaunch.configure_logging(uuid)
-        launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/includes/move_former_slam.launch"%pkg_dir])
-        launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/manual_collector_async.launch"%pkg_dir])
+        launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/includes/move_former_slam.launch"%pkg_share_dir])
+        launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/manual_collector_async.launch"%pkg_share_dir])
 
-        cli_arg3 = ['%s/launch/includes/start_bag_async.launch' % base_dir, 'bagfile_path:=%s' % bagfile_path]
+        cli_arg3 = ['%s/launch/includes/start_bag_async.launch' % pkg_share_dir, 'bagfile_path:=%s' % bagfile_path]
+
         roslaunch_args = cli_arg3[1:]
         roslaunch_file3 = [(roslaunch.rlutil.resolve_launch_arguments(cli_arg3)[0], roslaunch_args)]
         launch3 = roslaunch.parent.ROSLaunchParent(uuid, roslaunch_file3)
@@ -194,14 +194,15 @@ def main(argv):
         rgbd_msg = rospy.wait_for_message('rgbd_throttle/rgbd', rgbd, timeout=None)
         
         print("<%d>th Bagging started \n"%round_idx )
+        print("\033[36mPress 'q' followed by 'enter' key when you want to finish the data collection \n\033[0m")
 
-        init_pose_file = '%s/init_pose.yaml'%bagfile_path
-        pose = save_initial_pose(
-            output_file=init_pose_file,
-            publish_now=True,
-            frame_map="map",
-            frame_base="base_link"
-        )
+        #init_pose_file = '%s/init_pose.yaml'%bagfile_path
+        # pose = save_initial_pose(
+        #     output_file=init_pose_file,
+        #     publish_now=True,
+        #     frame_map="map",
+        #     frame_base="base_link"
+        # )
 
         while True:
             ch = key_pressed()
@@ -215,9 +216,10 @@ def main(argv):
             time.sleep(0.05)
 
         print("<%d> th exploration is done. Closing the exploration service \n"%round_idx)
-
         map_base = os.path.join(bagfile_path, "MAP_round_%02d" % round_idx)
-
+        data_type_file = os.path.join(bagfile_path, "nav_data")
+        data_type_file = Path(data_type_file)  # convert str to Path
+        data_type_file.touch(exist_ok=True)
         # Save SLAM maps BEFORE stopping slam_toolbox
         try:
             print("[INFO] Saving map to:", map_base)

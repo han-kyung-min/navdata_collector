@@ -41,7 +41,18 @@ class bag_extractor():
         self.rgb_topic = None
         self.depth_topic = None
                 
-        self.config_extractor = kwargs.get('navdata_extractor')
+        self.bagfile_path   = kwargs['navdata_extractor']['inpath']  #bagfile_path   # source dir
+        self.base_extraction_path   = kwargs['navdata_extractor']['outpath']
+        self.navtime_id     = self.bagfile_path.split('/')[-1]
+
+        self.config_extractor = kwargs['navdata_extractor']
+        if os.path.exists(os.path.join(self.bagfile_path, "nav_data")):
+            self.config_colldata_extractor = False
+        elif os.path.exists(os.path.join(self.bagfile_path, "coll_data")):
+            self.config_colldata_extractor = True
+        else:
+            raise RuntimeError("Expected either 'nav_data' or 'coll_data' folder in: {}".format(self.bagfile_path))
+
         if isinstance(self.config_extractor, dict):
             if 'rgbd_topic' in self.config_extractor:
                 self.rgbd_topic     = kwargs['navdata_extractor']['rgbd_topic']
@@ -55,7 +66,6 @@ class bag_extractor():
                 print("unknown image type\n")
                 raise NotImplementedError
 
-        self.config_colldata_extractor = kwargs['colldata_extractor']['enabled']
         if self.config_colldata_extractor:
             print("\033[38;5;208mCollision data extraction mode is on\033[0m")
             self.curr_rel_sg_topic = kwargs['colldata_extractor']['curr_rel_sg_topic']
@@ -66,9 +76,7 @@ class bag_extractor():
 
         self.twiststamped_topic    = kwargs['navdata_extractor']['twiststamped_topic']
 
-        self.bagfile_path   = kwargs['navdata_extractor']['inpath']  #bagfile_path   # source dir
-        self.base_extraction_path   = kwargs['navdata_extractor']['outpath']
-        self.navtime_id     = self.bagfile_path.split('/')[-1]
+
 
         # fix the inactive bag if there is any.
         active_bags = glob.glob('%s/*.bag.active' % self.bagfile_path)
@@ -108,7 +116,7 @@ class bag_extractor():
 
         if self.config_colldata_extractor:
             f.write('rel_subgoal.txt contains:  idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw \n')
-            f.write('waypoint.txt contains:     idx, seq, time(s), time(ns), is_joy_on, curr_sg_idx(of topo nodes), xy_dist, orient_dist, px1, py1, qw1, qz2, px2, py2, qw2, qz2, ... \n')
+            f.write('waypoint.txt contains:     idx, seq, time(s), time(ns), is_joy_on, xy_dist, orient_dist, px1, py1, qw1, qz2, px2, py2, qw2, qz2, ... \n')
             f.write('joy.txt contains:          idx, seq, time(s), time(ns), axis0, axis1,...,axis7, button0, button1, ..., button12 \n'  )
 
     def extractRGBD(self, bag, out_rgb_path, out_depth_path):

@@ -14,7 +14,7 @@
 int main(int argc, char** argv)
 {
   if (argc < 3) {
-	std::cerr << "usage: dump_posegraph <path/to/map.posegraph> <out.txt>\n";
+	std::cerr << "usage: dump_posegraph <path/to/map> <out.txt>\n";
 	return 1;
   }
   const std::string pg_path = argv[1];

@@ -20,6 +20,13 @@ class metadata_syncer():
         self.navtime_id           = self.bagfile_path.split('/')[-1]
         self.config_colldata_extractor = kwargs.get('colldata_extractor')
 
+        if os.path.exists(os.path.join(self.bagfile_path, "nav_data")):
+            self.config_colldata_extractor = False
+        elif os.path.exists(os.path.join(self.bagfile_path, "coll_data")):
+            self.config_colldata_extractor = True
+        else:
+            raise RuntimeError("Expected either 'nav_data' or 'coll_data' folder in: {}".format(self.bagfile_path))
+
         if self.config_colldata_extractor:
             self.extracted_data_path = '%s/coll_%s'%(self.base_extraction_path, self.navtime_id)
         else:

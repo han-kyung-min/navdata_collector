@@ -15,8 +15,8 @@ navdata_collector:
     map_topic:          "/map"
     #metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
-    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector"
-    #bagfile_root_path:  "/media/glab/FetchSSD/results/colldata_collector"
+    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector/colldata"
+    #bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector/topomap"
 
     max_time_per_round: 1800 # seconds (30 mins)
     max_nav_time:       3600 # seconds
@@ -26,10 +26,10 @@ navdata_collector:
     global_height:      2048
     
 navdata_extractor:
-    #inpath:             "/media/glab/FetchSSD/results/navdata_collector/topomap/2025-08-11-09-53"   # train
-    #outpath:            "/media/glab/FetchSSD/results/navdata_collector/topomap/processed"                   # train
-    inpath:             "/media/results/navdata_collector/collision_data/2025-08-21-18-33"         # deployment
-    outpath:            "/media/results/navdata_collector/collision_data/processed"                # deployment
+    #inpath:             "/media/glab/FetchSSD/results/navdata_collector/topomap/2025-08-25-10-57"   # train
+    #outpath:            "/home/glab/results/navdata_collector/topomap/processed"                   # train
+    inpath:             "/media/glab/FetchSSD/results/navdata_collector/colldata/2025-08-25-12-08"         # deployment
+    outpath:            "/home/glab/results/navdata_collector/colldata/processed"                # deployment
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"
     rgbd_topic:         "/rgbd_throttle/rgbd"
@@ -41,7 +41,6 @@ navdata_extractor:
     tf_topic:           "/tf"
     
 colldata_extractor:
-    enabled: True
     curr_rel_sg_topic:  "/curr_rel_subgoal"  # relative coord w.r.t base_link (It is the odom pose from topo map. NOT the predicted dist from the model)
     waypoint_topic:     "/waypoint"          # relative coord w.r.t base_link
     joy_topic:          "/joy"               # joy msg
