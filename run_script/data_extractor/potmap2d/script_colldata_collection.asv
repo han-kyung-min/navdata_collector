@@ -6,9 +6,9 @@ clear all; close all; clc;
 pkg_dir = fileparts( fileparts( fileparts(pwd) ) ) ;
 config_file = sprintf('%s/param/navdata_collector.yaml',pkg_dir);
 config = ReadYaml(config_file) ;
-base_dir = '/media/results/navdata_collector/collision_data/processed' ;
+proc_dir = '/media/results/navdata_collector/colldata/processed' ;
 
-bag_dirs = dir( sprintf('%s/20*/bag_*', base_dir) ) ;
+bag_dirs = dir( sprintf('%s/coll_*/bag_*', proc_dir) ) ;
 out_base_dir = sprintf('/media/data/mydata/former_datasets/colldata');
 % write readme.txt file
 fid = fopen( sprintf('%s/readme.txt', out_base_dir), 'w') ;
@@ -19,7 +19,15 @@ fprintf(fid, 'pose_context_m.txt:        \t  x, y, 0, qw, qx, qy, qz\n') ;
 fprintf(fid, 'subgoals_m.txt:            \t  x_old, y_old, 0, 0\n x_corr, y_corr, qw, qz\n ') ;
 fclose(fid) ;
 
-topomap_dir = '/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/round10-1' ;
+topomap_name = 'round9';
+topomap_dir = sprintf('/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/%s',topomap_name) ;
+% load sync coll nav data
+
+%sync_metadata_dir = sprintf('%s/coll_2025-08-21-18-33/bag_2025-08-21-18-33-42/synced',proc_dir) ; % r10(R)
+%sync_metadata_dir = sprintf('%s/coll_2025-08-25-12-08/bag_2025-08-25-12-08-56/synced',proc_dir) ; % r9 (L)
+sync_metadata_dir = sprintf('%s/coll_2025-08-25-12-03/bag_2025-08-25-12-03-28/synced',proc_dir) ; % r9-2 (R)
+
+
 rgb_folder = sprintf('%s/topomap/rgb*.png', topomap_dir)  ;
 D      = dir(rgb_folder);
 names  = {D.name} ;                 % cell array of ALL file names
@@ -41,8 +49,6 @@ topo_m2o_file = sprintf('%s/topomap/topo_tf_m2o.txt', topomap_dir) ;
 
 [num_node, ~] = size(topo_m2b_raw ) ;
 
-% load sync coll nav data
-sync_metadata_dir = '/media/results/navdata_collector/collision_data/processed/coll_2025-08-21-18-33/bag_2025-08-21-18-33-42/synced' ;
 nav_m2b_file = sprintf('%s/sync_tf_m2b.txt', sync_metadata_dir) ;
 nav_m2o_file = sprintf('%s/sync_tf_m2b.txt', sync_metadata_dir) ;
 nav_odom_file = sprintf('%s/sync_odom.txt', sync_metadata_dir) ;
@@ -59,15 +65,20 @@ navtime_id = str_split{end-1} ;
 colldata_dir = sprintf('%s/%s', out_base_dir, navtime_id) ; 
 if isdir(colldata_dir)
     rmdir(colldata_dir, 's') ;
+    %error('%s  dir exist!! \n Make sure to remove this dir before processing the data \n', colldata_dir) ;
 end
 mkdir(colldata_dir) ;
+topomap_name_file = sprintf('%s/%s',colldata_dir, topomap_name) ;
+system(sprintf('touch %s', topomap_name_file)) ;
 
-
+context_len = 5;
 
 eta = 1.0 ;             % Repulsive potential scaling factor (η)
 rho0 = 1.2 / 0.05 ;     % Influence distance (ρ0, # grids )
 obs_thr = 99 ;
-fps = 10 ;
+FPS = 10 ;
+v_max = 0.3 ; % 0.3 m/s
+w_max = 0.6 ; % 0.3 rad/s
 ws = 3 ;
 
 resolution = 0.05 ;
@@ -105,7 +116,7 @@ for data_idx = 1 : num_data
     waypt_line = waypoints(data_idx,:) ;
     joy_on = waypt_line(5) ;
     sg_idx = waypt_line(6) + 2 ;  % +1 matlab conv, +2 subgoal ahead
-    sg_px = subgoals(data_idx,5:6) /resolution ;
+    old_sg_px = subgoals(data_idx,5:6) /resolution ; % old sg_px
 
     o1Hb_curr  = topo_o1Hb(:,:,sg_idx) ; 
     m1Ho1_curr = topo_m1Ho(:,:,sg_idx) ; % odom wrt map1 @ curr sgidx
@@ -119,18 +130,23 @@ for data_idx = 1 : num_data
     %sgs_corrected_px = bHsg(1:2,4)' / resolution ;
     
     % draw next 5 future sgs
-    sgs_corrected_px = zeros(num_node,2) ;
+    sgs_xyzq_corrected_px = zeros(num_node, 7) ; % x y z qw qx qy qz
     for ii=1:num_node
         next_sg_idx = min(ii, num_node) ;
         bHsg = inv( m2Hb_curr ) * topo_m1Hb(:,:,next_sg_idx) ; 
-        sgs_corrected_px(ii,:) = bHsg(1:2,4)' / resolution ;
+        sgs_xyzq_corrected_px(ii,1:2) = bHsg(1:2,4)' / resolution ;
+        sgs_xyzq_corrected_px(ii,4:end) = htm_to_quat( bHsg ) ;
     end
 
-    sgs_cand_idx = find( sgs_corrected_px(:,1) > 0 ) ;
-    sgs_corrected_px = sgs_corrected_px()
-    Q = sqrt (sum( sgs_corrected_px.*sgs_corrected_px, 2 ) )  ;
+    sg_cand_idx = find( sgs_xyzq_corrected_px(:,1) > 0 ) ; % anything in front of the robot
+    sgs_xyzq_corrected_px = sgs_xyzq_corrected_px(sg_cand_idx,:) ;
+    Q = sqrt (sum( sgs_xyzq_corrected_px(:,1:2).*sgs_xyzq_corrected_px(:,1:2), 2 ) )  ;
     minidx = find(Q == min(Q) )  ;
-    sg_corrected_px = sgs_corrected_px(minidx,:) ;
+
+    new_sg_idx = sg_cand_idx(minidx(1)) ;
+    new_sg_xyzq_px = sgs_xyzq_corrected_px(minidx, :) ;
+    new_sg_xyzq_m  = new_sg_xyzq_px ;
+    new_sg_xyzq_m(1:3)  = new_sg_xyzq_m(1:3) * resolution ;
 
     if ~joy_on % skip if joy button (deadman switch) is not pressed
         continue ;
@@ -211,15 +227,15 @@ for data_idx = 1 : num_data
     hold on;
     
     plot( rx + waypt_traj_px(:,1) * 100 , ry + waypt_traj_px(:,2) * 100, 'ys', 'MarkerFaceColor','y') ;
-    plot( sg_corrected_px(1) + rx, sg_corrected_px(2) + ry, 'go', 'MarkerSize', 12, 'MarkerFaceColor', 'g' ) ;
+    plot( new_sg_xyzq_px(1) + rx, new_sg_xyzq_px(2) + ry, 'go', 'MarkerSize', 12, 'MarkerFaceColor', 'g' ) ;
     if (joy_on)
         %rectangle('position', [rx - roi_back_px, ry - roi_front_px / 2, roi_front_px, roi_front_px], 'EdgeColor', [1,0,1] ) ;
-        plot( rx, ry, 'cs', 'MarkerSize', 15, 'MarkerFaceColor', 'c' ) ;
+        plot( rx, ry, 'gs', 'MarkerSize', 15, 'MarkerFaceColor', 'g' ) ;
     else
         rectangle('position', [rx - roi_back_px, ry - roi_front_px / 2, roi_front_px, roi_front_px], 'EdgeColor', [1,0,0] ) ;
         plot( rx, ry, 'rs', 'MarkerSize', 15, 'MarkerFaceColor', 'r' ) ;
     end
-    plot( rx + sg_px(1), rx + sg_px(2),  'mo', 'MarkerSize', 8 , 'MarkerFaceColor', 'm') ;
+    plot( rx + old_sg_px(1), rx + old_sg_px(2),  'mo', 'MarkerSize', 8 , 'MarkerFaceColor', 'm') ;
 
     colorbar; 
     title( sprintf('Collision data @ data idx: %d ,  # Collected Data: %d ', data_idx, data_cnt)) ;
@@ -241,12 +257,22 @@ for data_idx = 1 : num_data
 
     set(gcf, 'pointer', 'crosshair'); 
     set(gcf, 'pointer', 'arrow');
-    P0 = [rx, ry] ; 
-    P2 = [sg_corrected_px(1), sg_corrected_px(2)] + P0 ;
+    P0_m = [rx, ry] * resolution ; 
+    P2_m = [new_sg_xyzq_m(1), new_sg_xyzq_m(2)] + P0_m ;
 
     % Compute the corrected waypoints
-    [out_waypts, target_waypoint] = sample_corrected_waypoints(P0, P2, resolution, fps, ws) ;
-    plot( out_waypts(:,1) + rx, out_waypts(:,2) + rx, 'gs', 'MarkerFaceColor', 'g') ;
+    P0m_xyzq = [0 0 0 1 0 0 0] ;
+    P2m_xyzq = [new_sg_xyzq_px(1:3) * resolution, new_sg_xyzq_px(4:end) ] ;
+    
+    P1m_xyzq = makeP1Between(P0m_xyzq, P2m_xyzq, alpha=0.5) ;
+    out_waypts_m = planKinodynamicPath(P0m_xyzq, P1m_xyzq, P2m_xyzq, v_max, w_max, FPS);
+    out_waypts_m = out_waypts_m(1:ws:end,:)  ; % waypoint spacing 3
+    out_waypts_m = out_waypts_m(2:6,:) ;    % next 5 steps
+    out_waypts_px = out_waypts_m ; out_waypts_px(:,1:2) = out_waypts_px(:,1:2) / resolution + map_size_px/2  ;
+
+    %[out_waypts_px, target_waypoint_px] = sample_corrected_waypoints(P0_xyzq, P2_xyzq, resolution, fps, ws) ;
+    %plot( out_waypts(:,1) + rx, out_waypts(:,2) + rx, 'gs', 'MarkerFaceColor', 'g') ;
+    drawPoses2D(out_waypts_px) ; 
 
     %% == 7. Store data == %%
     out_dir = sprintf('%s/data%05d',colldata_dir, data_cnt) ;
@@ -255,18 +281,22 @@ for data_idx = 1 : num_data
     end
     mkdir(out_dir) ;
     
-    context_idxs = [ data_idx-4*ws:ws:data_idx ] ;
-    nc = length(context_idxs) ;
+    new_sg_idx = new_sg_idx-1;
+    fn = names{new_sg_idx} ;
+    global_sg_idx = str2double(regexp(fn, '\d+', 'match', 'once')) ;
+    subgoal_idxs = [new_sg_idx, global_sg_idx] ;  % sg idx of /topomap folder, global sg idx in /synced folder
+    context_idxs = [data_idx-context_len*ws:ws:data_idx ] ;
+    %nc = length(context_idxs) ;
     % (1) save prev robot pose 
     % robot pose w.r.t curr robot pose
 
     wHr = nav_o2Hb(:,:,context_idxs) ;
-
-    rcHr = zeros(4,4,nc) ; 
+    
+    rcHr = zeros(4,4,context_len) ; 
     rcHr(:,:,end) = wHr(:,:,end) ;
     
     fid = fopen( sprintf('%s/pose_context_m.txt', out_dir) , 'w') ;
-    for ii=1:nc
+    for ii=1:size(wHr,3)  %context_len
         rcHr(:,:,ii) = inv(wHr(:,:,end)) * wHr(:,:,ii) ;
         x_prev_m = rcHr(1,4,ii) * resolution ; % m
         y_prev_m = rcHr(2,4,ii) * resolution ;
@@ -293,22 +323,25 @@ for data_idx = 1 : num_data
     writematrix( costmap_i8, sprintf('%s/costmap_i8.txt', out_dir ) ) ;
 
     % (4) save corrected waypoint
-    out_waypts_m = out_waypts; 
-    out_waypts_m(:,1:2) =  out_waypts_m(:,1:2)* resolution ;
-    fid = fopen( sprintf('%s/corrected_waypoints_m.txt', out_dir), 'w' ) ;
-    fprintf( fid, '%6.4f %6.4f %6.4f %6.4f \n', out_waypts_m' ) ; 
+    fid = fopen( sprintf('%s/corrected_waypoints_m.txt', out_dir), 'w' ) ; % x,y,z, qw,qx,qy,qz
+    fprintf( fid, '%6.4f %6.4f %6.4f %6.4f \n', out_waypts_m(:,[1,2,4,end])' ) ;  
     fclose(fid) ;
 
     % (5) save pred waypoints
-    pred_waypts_m = reshape( waypt_line(9:end), 4, nc)' ;
+    pred_waypts_m = reshape( waypt_line(9:end), 4, context_len)' ;
     fid = fopen( sprintf('%s/pred_waypoints_m.txt', out_dir), 'w') ;
     fprintf( fid, '%6.4f %6.4f %6.4f %6.4f \n', pred_waypts_m') ;
     fclose(fid) ;
 
     % (6) save context idx
     fid = fopen( sprintf('%s/context_index.txt', out_dir), 'w') ;
-    fprintf(fid, '%d ', context_idxs);
+    fprintf(fid, '%d ', context_idxs); fprintf(fid, '\n');
     fclose(fid) ;
+
+    % (7) save sg_idx
+    % fid = fopen( sprintf('%s/subgoal_index.txt', out_dir), 'w') ;
+    % fprintf(fid, '%d ', subgoal_idxs); fprintf(fid, '\n');
+    % fclose(fid) ;
 
     % (7) save SGs
     dx = gx - rx ;   % wpt1  should heading to wpt2
@@ -318,9 +351,12 @@ for data_idx = 1 : num_data
     q = [cos(half_theta), zeros(size(theta)), zeros(size(theta)), sin(half_theta)] ;
     q = q / norm(q) ; % subgoal orient
     
-    fid = fopen( sprintf('%s/subgoals_m.txt', out_dir), 'w') ; % old, corrected
-    fprintf(fid, '%6.4f %6.4f 0 0 \n%6.4f %6.4f %6.4f %6.4f\n', sg_px(1) * resolution, sg_px(1) * resolution,...
-                                                        dx*resolution, dy*resolution, q(1), q(4) ) ;
+    fid = fopen( sprintf('%s/old_subgoal_m.txt', out_dir), 'w') ; % old; 
+    fprintf(fid, '%6.4f %6.4f 0 0\n', old_sg_px(1) * resolution, old_sg_px(2) * resolution) ;
+    fclose(fid) ;
+
+    fid = fopen( sprintf('%s/new_subgoal_m.txt', out_dir), 'w') ; % corrected
+    fprintf(fid, '%6.4f %6.4f %6.4f %6.4f\n', dx*resolution, dy*resolution, q(1), q(4) ) ;
     fclose(fid) ;
 
     data_cnt = data_cnt + 1 ;
