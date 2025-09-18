@@ -21,9 +21,9 @@ fclose(fid) ;
 
 % load sync coll nav data
 
-topomap_name = 'round10'; sync_metadata_dir = sprintf('%s/coll_2025-08-21-18-33/bag_2025-08-21-18-33-42/synced',proc_dir) ; % r10(R)
+%topomap_name = 'round10'; sync_metadata_dir = sprintf('%s/coll_2025-08-21-18-33/bag_2025-08-21-18-33-42/synced',proc_dir) ; % r10(R)
+topomap_name = 'round9'; sync_metadata_dir = sprintf('%s/coll_2025-08-25-12-03/bag_2025-08-25-12-03-28/synced',proc_dir) ; % r9-2 (R)
 %topomap_name = 'round9'; sync_metadata_dir = sprintf('%s/coll_2025-08-25-12-08/bag_2025-08-25-12-08-56/synced',proc_dir) ; % r9 (L)
-%topomap_name = 'round9'; sync_metadata_dir = sprintf('%s/coll_2025-08-25-12-03/bag_2025-08-25-12-03-28/synced',proc_dir) ; % r9-2 (R)
 topomap_dir = sprintf('/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/%s',topomap_name) ;
 
 rgb_folder = sprintf('%s/topomap/rgb*.png', topomap_dir)  ;

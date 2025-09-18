@@ -28,8 +28,8 @@ navdata_collector:
 navdata_extractor:
     #inpath:             "/media/glab/FetchSSD/results/navdata_collector/topomap/2025-08-25-10-57"   # train
     #outpath:            "/home/glab/results/navdata_collector/topomap/processed"                   # train
-    inpath:             "/media/results/navdata_collector/colldata/2025-08-25-12-03"         # colldata  # deployment
-    outpath:            "/media/results/navdata_collector/colldata/processed"                # colldata  # deployment
+    inpath:             "/media/results/navdata_collector/topomap/T3-2025-09-17-18-52"      # colldata  # deployment
+    outpath:            "/media/results/navdata_collector/topomap/processed"                # colldata  # deployment
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"
     rgbd_topic:         "/rgbd_throttle/rgbd"
@@ -39,6 +39,9 @@ navdata_extractor:
     odom_filt_topic:    "/odometry/filtered"   
     map_topic:          "/map"
     tf_topic:           "/tf"
+    
+topomap_extractor:
+    topomap_path: "/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/T3"
     
 colldata_extractor:
     curr_rel_sg_topic:  "/curr_rel_subgoal"  # relative coord w.r.t base_link (It is the odom pose from topo map. NOT the predicted dist from the model)

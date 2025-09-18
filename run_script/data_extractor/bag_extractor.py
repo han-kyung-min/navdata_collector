@@ -450,17 +450,19 @@ class bag_extractor():
                 self.bag = rosbag.Bag(bagfile)
 
                 # copy slam map if exist
-                data_file = glob.glob('%s/*data'%self.bagfile_path)
+                data_file = glob.glob('%s/*.data'%self.bagfile_path)
                 pgo_file = glob.glob('%s/*.posegraph'%self.bagfile_path)
-                target_topomap_file_path = glob.glob('%s/topomap_*'%self.bagfile_path)
-                target_topomap_file = target_topomap_file_path[0].rstrip('/').split('/')[-1]
-                #print(target_topomap_file)
+                target_bag_file_path = glob.glob('%s/bag_*'%self.bagfile_path)
+                print(self.bagfile_path)
+                print(target_bag_file_path)
+                target_bag_file = target_bag_file_path[0].rstrip('/').split('/')[-1]
+                #print(target_bag_file)
                 if data_file:
                     shutil.copy(data_file[0], '%s/map.data'%bag_extraction_path)
                 if pgo_file:
                     shutil.copy(pgo_file[0], '%s/map.posegraph'%bag_extraction_path)
-                if target_topomap_file:
-                    shutil.copy(target_topomap_file_path[0], '%s/%s'%(bag_extraction_path, target_topomap_file) )
+                #if target_bag_file:
+                #    shutil.copy(target_bag_file_path[0], '%s/%s'%(bag_extraction_path, target_bag_file) )
 
                 out_traj_path   = '%s/traj' % (bag_extraction_path)
                 out_depth_path  = '%s/depth'% (bag_extraction_path)
