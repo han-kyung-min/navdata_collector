@@ -27,7 +27,7 @@ SRC_BAG_DIR="$(
 )"
 
 
-EXTRACTED_DATA_DIR="$(
+EXTRACTED_BAG_DIR="$(
   grep -E '^[[:space:]]*outpath:' "$NAV_CFG" \
     | sed 's/#.*//' \
     | awk -F': *' '{print $2}' \
@@ -35,11 +35,19 @@ EXTRACTED_DATA_DIR="$(
 )"
 
 [ -n "${TOPOMAP_DIR:-}" ] || { echo "[ERROR] 'topomap_name' is missing/empty in $NAV_CFG"; exit 1; }
-[ -n "${EXTRACTED_DATA_DIR:-}" ] || { echo "[ERROR] 'out_path' is missing/empty in $NAV_CFG"; exit 1; }
+[ -n "${EXTRACTED_BAG_DIR:-}" ] || { echo "[ERROR] 'out_path' is missing/empty in $NAV_CFG"; exit 1; }
 
 VAL=${SRC_BAG_DIR%/}              # drop trailing slash if any
 BAG_ID=${VAL##*/}           # -> T1-2025-09-17-17-44
-EXTRACTED_DATA_DIR="${EXTRACTED_DATA_DIR}/${BAG_ID}"
+BASE_OUT_DIR="${EXTRACTED_BAG_DIR}/${BAG_ID}"
+[ -d "$BASE_OUT_DIR" ] || { echo "[ERROR] not found: $BASE_OUT_DIR"; exit 1; }
+
+shopt -s nullglob
+kids=( "$BASE_OUT_DIR"/bag_* )
+# No candidates?
+[ ${#kids[@]} -gt 0 ] || { echo "[ERROR] no bag_* under $BASE_OUT_DIR"; exit 1; }
+
+EXTRACTED_DATA_DIR="$(ls -1dt "${kids[@]}" | head -n 1)"
 
 echo "Nav Config file : $NAV_CFG"
 echo $NAVDATA_EXTRACTOR_DIR
@@ -47,7 +55,6 @@ echo $BAG_ID
 
 echo "TOPOMAP_DIR:  $TOPOMAP_DIR"  
 echo "ext data dir: $EXTRACTED_DATA_DIR"
-
 
 if [[ ! -f "$EXTRACTOR_SCRIPT" ]]; then
     echo "[ERROR] Extractor script not found: $EXTRACTOR_SCRIPT" >&2
@@ -65,7 +72,7 @@ conda activate navdata
 cd "$NAVDATA_EXTRACTOR_DIR"
 
 echo "executing $EXTRACTOR_SCRIPT"
-python $EXTRACTOR_SCRIPT "../../param/navdata_collector.yaml"
+#python $EXTRACTOR_SCRIPT "../../param/navdata_collector.yaml"
 
 # 1. Make directory
 
@@ -76,12 +83,10 @@ fi
 
 mkdir -p "$TOPOMAP_DIR"
 
-exit 0
-
-# 2. Copy extracted data
-# if compgen -G "${EXTRACTED_DATA_DIR}/bag_*/*" > /dev/null; then
-#   cp -a -- "${EXTRACTED_DATA_DIR}"/bag_*/* "$TOPOMAP_DIR"/
-# fi
+#2. Copy extracted data
+if compgen -G "${EXTRACTED_DATA_DIR}/*" > /dev/null; then
+  cp -a -- "${EXTRACTED_DATA_DIR}"/map* "$TOPOMAP_DIR"/
+fi
 
 
 echo "finished copying topomap, creating slam_poses.txt"
@@ -96,7 +101,7 @@ echo "finished decoding PGO file"
 cd "${AINAV_PROJ_DIR}/src"
 
 
-python create_synced_topomap.py -i "$TOPOMAP_DIR"
+python create_synced_topomap.py -i "$EXTRACTED_DATA_DIR" -o "$TOPOMAP_DIR"
 
 if command -v conda >/dev/null 2>&1; then
   source "$(conda info --base)/etc/profile.d/conda.sh"
