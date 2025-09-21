@@ -76,10 +76,12 @@ fi
 
 mkdir -p "$TOPOMAP_DIR"
 
+exit 0
+
 # 2. Copy extracted data
-if compgen -G "${EXTRACTED_DATA_DIR}/bag_*/*" > /dev/null; then
-  cp -a -- "${EXTRACTED_DATA_DIR}"/bag_*/* "$TOPOMAP_DIR"/
-fi
+# if compgen -G "${EXTRACTED_DATA_DIR}/bag_*/*" > /dev/null; then
+#   cp -a -- "${EXTRACTED_DATA_DIR}"/bag_*/* "$TOPOMAP_DIR"/
+# fi
 
 
 echo "finished copying topomap, creating slam_poses.txt"

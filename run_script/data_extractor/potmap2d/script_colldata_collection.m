@@ -8,7 +8,9 @@ config_file = sprintf('%s/param/navdata_collector.yaml',pkg_dir);
 config = ReadYaml(config_file) ;
 proc_dir = '/media/results/navdata_collector/colldata/processed' ;
 
-bag_dirs = dir( sprintf('%s/coll_*/bag_*', proc_dir) ) ;
+topomap_name = 'T1' ;
+bag_group_dir = sprintf('%s/%s_coll', proc_dir, topomap_name) ;
+bag_dirs = dir( sprintf('%s/coll_*/bag_*', bag_group_dir) ) ;
 out_base_dir = sprintf('/media/data/mydata/former_datasets/colldata');
 % write readme.txt file
 fid = fopen( sprintf('%s/readme.txt', out_base_dir), 'w') ;
@@ -21,12 +23,12 @@ fclose(fid) ;
 
 % load sync coll nav data
 
-%topomap_name = 'round10'; sync_metadata_dir = sprintf('%s/coll_2025-08-21-18-33/bag_2025-08-21-18-33-42/synced',proc_dir) ; % r10(R)
-topomap_name = 'round9'; sync_metadata_dir = sprintf('%s/coll_2025-08-25-12-03/bag_2025-08-25-12-03-28/synced',proc_dir) ; % r9-2 (R)
+bag_dir = bag_dirs(2) ; 
+sync_metadata_dir = sprintf('%s/%s/synced', bag_dir.folder, bag_dir.name) ; % r9-2 (R)
 %topomap_name = 'round9'; sync_metadata_dir = sprintf('%s/coll_2025-08-25-12-08/bag_2025-08-25-12-08-56/synced',proc_dir) ; % r9 (L)
-topomap_dir = sprintf('/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/%s',topomap_name) ;
+topomap_root_dir = sprintf('/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/%s',topomap_name) ;
 
-rgb_folder = sprintf('%s/topomap/rgb*.png', topomap_dir)  ;
+rgb_folder = sprintf('%s/topomap/rgb*.png', topomap_root_dir)  ;
 D      = dir(rgb_folder);
 names  = {D.name} ;                 % cell array of ALL file names
 S = lower(string(names));                   % string array for endsWith
@@ -38,9 +40,9 @@ for idx=1:length(S)
 end
 
 % load topomap
-topo_odom_file = sprintf('%s/topomap/topo_odom.txt', topomap_dir) ;
-topo_m2b_file = sprintf('%s/topomap/topo_tf_m2b.txt', topomap_dir) ;
-topo_m2o_file = sprintf('%s/topomap/topo_tf_m2o.txt', topomap_dir) ;
+topo_odom_file = sprintf('%s/topomap/topo_odom.txt', topomap_root_dir) ;
+topo_m2b_file = sprintf('%s/topomap/topo_tf_m2b.txt', topomap_root_dir) ;
+topo_m2o_file = sprintf('%s/topomap/topo_tf_m2o.txt', topomap_root_dir) ;
 [topo_odom_raw, topo_odom_xy, topo_o1Hb ] = load_pose_data(topo_odom_file) ; 
 [topo_m2b_raw, topo_m2b_xy, topo_m1Hb ] = load_pose_data(topo_m2b_file) ; 
 [topo_m2o_raw, topo_m2o_xy, topo_m1Ho ] = load_pose_data(topo_m2o_file) ; 
@@ -56,7 +58,6 @@ nav_odom_file = sprintf('%s/sync_odom.txt', sync_metadata_dir) ;
 [nav_m2o_raw,  nav_m2o_xy,  nav_m2Ho ] = load_pose_data(nav_m2o_file) ; 
 
 [num_data, c] = size(nav_odom_raw) ;
-
 
 str_split = split(sync_metadata_dir, '/') ;
 navtime_id = str_split{end-1} ;
@@ -212,8 +213,8 @@ for data_idx = 1 : num_data
 
     nexttile(t,2);  % subgoal
     sgimg_idx = topoimg_idxstr{sg_idx} ;
-    rgb_sg_file =  sprintf('%s/topomap/rgb%s.png',topomap_dir, sgimg_idx) ;
-    depth_sg_file =  sprintf('%s/topomap/depth%s.png',topomap_dir, sgimg_idx) ;
+    rgb_sg_file =  sprintf('%s/topomap/rgb%s.png',topomap_root_dir, sgimg_idx) ;
+    depth_sg_file =  sprintf('%s/topomap/depth%s.png',topomap_root_dir, sgimg_idx) ;
     rgb_sg = imread(rgb_sg_file) ;
     depth_sg = imread(depth_sg_file);
     imshow(rgb_sg)  ;
