@@ -80,7 +80,8 @@ function poses = planKinodynamicPath(P0, P1, P2, v_max, w_max, FPS, opts)
 
     % build time mapping t(S) via trapezoid over ds/v_cap
     ds    = diff(S); ds(ds<=0) = 1e-12;
-    dtSeg = 2*ds ./ (v_cap(1:end-1) + v_cap(end:-1:2)); % robust average
+    %dtSeg = 2*ds ./ (v_cap(1:end-1) + v_cap(end:-1:2)); % robust average
+    dtSeg = 2*ds ./ (v_cap(1:end-1) + v_cap(2:end));
     Tall  = [0; cumsum(dtSeg)];
     Ttot  = Tall(end);
 
@@ -89,8 +90,22 @@ function poses = planKinodynamicPath(P0, P1, P2, v_max, w_max, FPS, opts)
 % t_samp  = 0:dt:Ttot; if t_samp(end) < Ttot-1e-12, t_samp(end+1) = Ttot; end
 % s_samp  = interp1(Tall, S, t_samp, 'linear','extrap');
 
-num_points = ceil(Ttot * FPS);  % number of output poses
-s_samp = linspace(0, Stot, num_points);  % arc-length uniform sampling
+%num_points = ceil(Ttot * FPS);  % number of output poses
+%s_samp = linspace(0, Stot, num_points);  % arc-length uniform sampling
+
+% NEW: arc-length uniform sampling with ≥16 poses
+base_n   = max(1, ceil(Ttot * FPS));
+min_n    = 16;
+target_n = max(min_n, base_n);
+
+if Stot < 1e-12
+    ds = 1e-3;
+    s_samp = (0:target_n-1)' * ds;
+else
+    ds = Stot / max(target_n - 1, 1);
+    s_samp = (0:target_n-1)' * ds;   % uniform arc-length
+end
+
 
     % evaluate spline at s_samp
     xs = zeros(numel(s_samp),1); ys = xs; dxs = xs; dys = xs;
@@ -98,10 +113,17 @@ s_samp = linspace(0, Stot, num_points);  % arc-length uniform sampling
         if s_samp(k) <= S01
             u = interp1(s01, u01, s_samp(k), 'linear','extrap');
             [xk,yk,dxk,dyk] = hermiteXY(u, x0,y0,x1,y1, t0(1),t0(2), t1(1),t1(2));
-        else
+        elseif s_samp(k) <= Stot
             s2 = s_samp(k) - S01;
             u  = interp1(s12, u12, s2, 'linear','extrap');
             [xk,yk,dxk,dyk] = hermiteXY(u, x1,y1,x2,y2, t1(1),t1(2), t2(1),t2(2));
+        else
+            % ---- extension past P2 along heading th2 ----
+            dS  = s_samp(k) - Stot;
+            xk  = x2 + dS * cos(th2);
+            yk  = y2 + dS * sin(th2);
+            dxk = cos(th2);
+            dyk = sin(th2);
         end
         xs(k)=xk; ys(k)=yk; dxs(k)=dxk; dys(k)=dyk;
     end

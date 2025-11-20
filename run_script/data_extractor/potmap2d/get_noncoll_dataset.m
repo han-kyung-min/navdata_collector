@@ -5,14 +5,14 @@ function [ dataset ] = get_noncoll_dataset( bag_path, config, seed_ratio )
     num_frames = length( rgb_files )  ;
     num_seeds = int32(seed_ratio * num_frames) ;
 
-    last_frame_idx = num_frames - 1;
+    last_frame_idx = num_frames - 1 ;
     ws = config.datasets.former.waypoint_spacing ;
     max_frame_dist = config.distance.max_frame_dist ;
     max_goal_dist = ws * max_frame_dist ;
     context_size = config.context_size ;
     len_traj_pred = config.len_traj_pred ;
     
-    sidx = context_size * ws ;
+    sidx = context_size * ws ; % to ensure nonzero context idxs w.r.t curr idx
     eidx = (num_frames - max_frame_dist) - sidx  ;
     assert(eidx > num_seeds) ;
     seeds = randperm(eidx, num_seeds) + sidx ;

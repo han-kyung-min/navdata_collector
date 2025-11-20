@@ -65,6 +65,16 @@ if [[ ! -f "$NAV_CFG" ]]; then
     exit 1
 fi
 
+# --- check for nav_data file ---
+nav_file="$SRC_BAG_DIR/nav_data"
+if [ ! -f "$nav_file" ]; then
+  echo "[ERROR] Required file 'nav_data' not found in $SRC_BAG_DIR"
+  echo "Make sure to point to the bag file for a topomap"
+  exit 1
+fi
+
+echo "Found nav_data file: $nav_file"
+
 # --- Run extraction inside ROS + conda environment ---
 source ~/catkin_ws/install/setup.bash
 source "$(conda info --base)/etc/profile.d/conda.sh"
@@ -72,12 +82,12 @@ conda activate navdata
 cd "$NAVDATA_EXTRACTOR_DIR"
 
 echo "executing $EXTRACTOR_SCRIPT"
-#python $EXTRACTOR_SCRIPT "../../param/navdata_collector.yaml"
+python $EXTRACTOR_SCRIPT "../../param/navdata_collector.yaml"
 
 # 1. Make directory
 
 if [[ -e "$TOPOMAP_DIR" ]]; then
-  echo "[ERROR] Topomap dir already exists. I am not overwritting this folder: $TOPOMAP_DIR" >&2
+  echo "[ERROR] Topomap dir already exists. Remove $TOPOMAP_DIR before creating a new one" >&2
   exit 1
 fi
 

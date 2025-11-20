@@ -28,10 +28,11 @@ navdata_collector:
 navdata_extractor:
     #inpath:             "/media/glab/FetchSSD/results/navdata_collector/topomap/2025-08-25-10-57"   # train
     #outpath:            "/home/glab/results/navdata_collector/topomap/processed"                   # train
-    inpath:             "/media/results/navdata_collector/topomap/T2-2025-09-17-17-36"      # topo map  
-    outpath:            "/media/results/navdata_collector/topomap/processed"                # topo map
-#    inpath:             "/media/results/navdata_collector/colldata/T8_coll/2025-09-19-16-07"      # topo map  
-#    outpath:            "/media/results/navdata_collector/colldata/processed"                # topo map
+#    inpath:             "/media/results/navdata_collector/topomap/T1-2025-09-17-17-44"      # topo map bag  
+#    outpath:            "/media/results/navdata_collector/topomap/processed"                # extracted topomap bag
+
+    inpath:             "/media/results/navdata_collector/colldata/T9_coll/2025-11-19-15-49" # colldata bag  
+    outpath:            "/media/results/navdata_collector/colldata/processed/T9_coll"        # extracted colldata bag
     
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"
@@ -43,9 +44,9 @@ navdata_extractor:
     map_topic:          "/map"
     tf_topic:           "/tf"
     
-topomap_extractor:
-    topomap_path: "/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/T2"
-    
+#topomap_extractor:
+    #topomap_path: "/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/T3"  # out topomap path
+
 colldata_extractor:
     curr_rel_sg_topic:  "/curr_rel_subgoal"  # relative coord w.r.t base_link (It is the odom pose from topo map. NOT the predicted dist from the model)
     waypoint_topic:     "/waypoint"          # relative coord w.r.t base_link

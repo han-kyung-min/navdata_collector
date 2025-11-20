@@ -68,11 +68,12 @@ Besides, this process is supposed to extract synced RGB and depth file.
     $ sh navigate_w_bagging_data.sh
 ```
 > * You need to press L1 + joy control when the collision is about to happen. 
-> * Pressing L1, L2, R1, and R2 together will end the process.
+> * Pressing L1, L2, R1, and R2 together will end the process
  
 > ### 6. Extract the stored colldata bag file
-> * Open navdata_collector.yaml which is located under ~/catkin_ws/src/navdata_collector/param 
-> * Enable *colldata_extractor* tab (curr_rel_sg_topic, waypoint_topic, joy_topic). This will switch the extractor script to colldata collectioni mode
+> * Open navdata_collector.yaml which is located under ~/catkin_ws/src/navdata_collector/param/ 
+> * Set navdata_collector['navdata_extractor']['inpath'] and navdata_collector['navdata_extractor']['outpath']. The former should points to the input bagfile folder and the latter should points to the output path to extract the data.
+> * The, execute the following commands
  ```
     $ cd /home/$USER/catkin_ws/src/navdata_collector/run_script/data_extractor
     $ python script_extract_bags.py ../../param/navdata_collector.yaml
@@ -80,6 +81,6 @@ Besides, this process is supposed to extract synced RGB and depth file.
 > ### 7. Semi-automatic data collection
 > * (1) Open MATLAB
 > * (2) cd to /home/hankm/catkin_ws/src/navdata_collector/run_script/data_extractor/potmap2d
-> * (3) Run  script_trajectory_correction_from_lpm.m
+> * (3) Run  script_colldata_collection.m
 
 
