@@ -1,45 +1,169 @@
 % gen coll and noncoll dataset
 
+clear all; 
+close all; 
+clc;
 
-colldata_folder = '/media/mydata/former_datasets/colldata/colldata-2K' ;
-noncolldata_folder = '/media/mydata/former_datasets/colldata/non_colldata-10K' ;
+colldata_folder = '/media/mydata/former_datasets/colldata/colldata-10K' ;
+noncolldata_folder = '/media/mydata/former_datasets/colldata/noncolldata-30K' ;
 
 input_bag_paths = dir( sprintf('%s/bag_*', colldata_folder) ) ;
-out_paths = '/media/mydata/former_datasets/colldata/mixed-12K' ;
 
-% 1st copy all data from colldata-all to 
-% data_cnt = 0;
-% for idx=1:length(input_bag_paths)
-%     tmp_path = sprintf('%s/%s', input_bag_paths(idx).folder, input_bag_paths(idx).name ) ;
-%     datasets = dir(sprintf('%s/data*', tmp_path) ) ;
-% 
-%     wd = cd;
-%     cd(colldata_folder) ;
-%     for ii=1:length(datasets)
-%         src_path = sprintf('%s/%s', datasets(ii).folder, datasets(ii).name ) ;
-%         tgt_path = sprintf('%s/data%05d', colldata_folder, data_cnt ) ;
-%         cmd = sprintf('cp -rf %s %s', src_path, tgt_path) ;
-%         system(cmd) ;
-%         data_cnt = data_cnt + 1;
-%     end
-% end
+mixed_8K_paths = '/media/mydata/former_datasets/colldata/mixed-8K' ;
+mixed_12K_paths = '/media/mydata/former_datasets/colldata/mixed-12K' ;
+mixed_16K_paths = '/media/mydata/former_datasets/colldata/mixed-16K' ;
+mixed_20K_paths = '/media/mydata/former_datasets/colldata/mixed-20K' ;
 
-colldata =  dir(sprintf('%s/data*',colldata_folder) ) ;
-noncolldata = dir(sprintf('%s/data*', noncolldata_folder) ) ;
+rng(42);  
 
-% 1st copy colldata
+% gen shuffle list
+noncolldata_dirs = dir( sprintf('/media/data/mydata/former_datasets/colldata/noncolldata-30K/data*') ) ;
+p = randperm( length(noncolldata_dirs) ) ;
+fid = fopen('/media/mydata/former_datasets/colldata/noncolldata-30K/shuffled_list.txt', 'w') ;
+for idx=1:length(p)
+    fprintf(fid, 'data%05d\n', p(idx)) ;
+end
+fclose(fid) ;
+
+colldata_dirs = dir( sprintf('/media/data/mydata/former_datasets/colldata/colldata-10K/data*') ) ;
+p = randperm( length(colldata_dirs) ) ;
+fid = fopen('/media/mydata/former_datasets/colldata/colldata-10K/shuffled_list.txt', 'w') ;
+for idx=1:length(p)
+    fprintf(fid, 'data%05d\n', p(idx)) ;
+end
+fclose(fid) ;
+
+noncolldata_list = readlines( sprintf('%s/shuffled_list.txt', noncolldata_folder) ) ;
+colldata_list = readlines( sprintf('%s/shuffled_list.txt', colldata_folder) ) ;
+noncolldata_list(end) = [] ;
+colldata_list(end) = [] ;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   mixed 20K
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% colldata first
+num_colldata = length(colldata_list) ;
 data_cnt = 0;
-for idx=1:length(colldata)
-    src_path = sprintf('%s/%s', colldata(idx).folder, colldata(idx).name ) ;
-    tgt_path = sprintf('%s/data%05d', out_paths, data_cnt) ;
+for idx=1:num_colldata
+    src_path = sprintf('%s/%s', colldata_folder, colldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_20K_paths, data_cnt ) ;
     cmd = sprintf('cp -rf %s %s', src_path, tgt_path) ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
 end
 
-% 2nd copy noncolldata
-for idx=1:length(noncolldata)
-    src_path = sprintf('%s/%s', noncolldata(idx).folder, noncolldata(idx).name ) ;
-    tgt_path = sprintf('%s/data%05d', out_paths, data_cnt) ;
-    cmd = sprintf('cp %s %s', src_path, tgt_path);
+% do noncolldata
+data_cnt = num_colldata ;
+num_noncolldata = num_colldata ;
+for idx=1:num_noncolldata
+    src_path = sprintf('%s/%s', noncolldata_folder, noncolldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_20K_paths, data_cnt ) ;
+    cmd = sprintf('cp -rf %s %s', src_path, tgt_path)  ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   mixed 16K
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% colldata first
+tmp = dir(sprintf('%s/data*', mixed_16K_paths) ) ;
+assert( length(tmp) == 0 ) ;
+num_colldata = 8000 ;
+data_cnt = 0;
+for idx=1:num_colldata
+    src_path = sprintf('%s/%s', colldata_folder, colldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_16K_paths, data_cnt ) ;
+    cmd = sprintf('cp -rf %s %s', src_path, tgt_path) ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
+end
+
+% do noncolldata
+data_cnt = num_colldata ;
+num_noncolldata = num_colldata ;
+for idx=1:num_noncolldata
+    src_path = sprintf('%s/%s', noncolldata_folder, noncolldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_16K_paths, data_cnt ) ;
+    cmd = sprintf('cp -rf %s %s', src_path, tgt_path)  ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
+end
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   mixed 12K
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% colldata first
+tmp = dir(sprintf('%s/data*', mixed_12K_paths) ) ;
+assert( length(tmp) == 0 ) ;
+num_colldata = 6000 ;
+data_cnt = 0;
+for idx=1:num_colldata
+    src_path = sprintf('%s/%s', colldata_folder, colldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_12K_paths, data_cnt ) ;
+    cmd = sprintf('cp -rf %s %s', src_path, tgt_path) ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
+end
+
+% do noncolldata
+data_cnt = length(colldata_list) ;
+num_noncolldata = num_colldata ;
+for idx=1:num_noncolldata
+    src_path = sprintf('%s/%s', noncolldata_folder, noncolldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_12K_paths, data_cnt ) ;
+    cmd = sprintf('cp -rf %s %s', src_path, tgt_path)  ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%   mixed 8K
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+tmp = dir(sprintf('%s/data*', mixed_8K_paths) ) ;
+assert( length(tmp) == 0 ) ;
+num_colldata = 4000 ;
+data_cnt = 0;
+for idx=1:num_colldata
+    src_path = sprintf('%s/%s', colldata_folder, colldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_8K_paths, data_cnt ) ;
+    cmd = sprintf('cp -rf %s %s', src_path, tgt_path) ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
+end
+
+% do noncolldata
+data_cnt = length(colldata_list) ;
+num_noncolldata = num_colldata ;
+for idx=1:num_noncolldata
+    src_path = sprintf('%s/%s', noncolldata_folder, noncolldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_8K_paths, data_cnt ) ;
+    cmd = sprintf('cp -rf %s %s', src_path, tgt_path)  ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
+end
+
+
+
+% test noncolldata
+
+for idx=num_noncolldata-500:num_noncolldata
+    src_path = sprintf('%s/%s', noncolldata_folder, noncolldata_list(idx) ) ;
+    tgt_path = sprintf('%s/data%05d', mixed_8K_paths, data_cnt ) ;
+    cmd = sprintf('cp -rf %s %s', src_path, tgt_path)  ;
+    system(cmd) ;
+    display(data_cnt) ;
+    data_cnt = data_cnt + 1;
 end
 
 

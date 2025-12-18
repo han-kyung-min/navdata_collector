@@ -44,6 +44,7 @@ add_message_files(
   FILES
   rgbd.msg
   waypoint_stamped.msg
+  navdata_stamped.msg
 )
 
 

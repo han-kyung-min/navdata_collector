@@ -69,7 +69,7 @@ class bag_extractor():
         if self.config_colldata_extractor:
             print("\033[38;5;208mCollision data extraction mode is on\033[0m")
             self.curr_rel_sg_topic = kwargs['colldata_extractor']['curr_rel_sg_topic']
-            self.waypoint_topic = kwargs['colldata_extractor']['waypoint_topic']
+            self.navdata_topic = kwargs['colldata_extractor']['navdata_topic']
             self.joy_topic = kwargs['colldata_extractor']['joy_topic']
         else:
             print("\033[38;5;51mOrdinary nav data extraction mode is on\033[0m")
@@ -116,7 +116,9 @@ class bag_extractor():
 
         if self.config_colldata_extractor:
             f.write('rel_subgoal.txt contains:  idx, seq, time(s), time(ns), px, py, pz, qx, qy, qz, qw \n')
-            f.write('waypoint.txt contains:     idx, seq, time(s), time(ns), is_joy_on, xy_dist, orient_dist, px1, py1, qw1, qz2, px2, py2, qw2, qz2, ... \n')
+            f.write('navdata.txt contains:      idx, seq, time(s), time(ns), is_joy_on, sg_idx, xy_dist, orient_dist, '
+                                                'sg_px, sg_py, sg_qw, sg_qz, is_coll, '
+                    '                           px1, py1, qw1, qz2, px2, py2, qw2, qz2, ... \n')
             f.write('joy.txt contains:          idx, seq, time(s), time(ns), axis0, axis1,...,axis7, button0, button1, ..., button12 \n'  )
 
     def extractRGBD(self, bag, out_rgb_path, out_depth_path):
@@ -372,17 +374,21 @@ class bag_extractor():
                 cnt += 1
             f.close()
 
-    def extractWayPoints(self, bag, out_traj_path):
+    def extractNavData(self, bag, out_traj_path):
         cnt = 0
-        waypoint_file = "%s/waypoints.txt" % out_traj_path
-        f = open(waypoint_file, 'w')
-        with tqdm(total=bag.get_message_count(self.waypoint_topic)) as pbar:
-            for topic, msg, t in bag.read_messages(topics=[self.waypoint_topic]):
+        navdata_file = "%s/navdata.txt" % out_traj_path
+        f = open(navdata_file, 'w')
+        with tqdm(total=bag.get_message_count(self.navdata_topic)) as pbar:
+            for topic, msg, t in bag.read_messages(topics=[self.navdata_topic]):
                 # print("intensities {}".format(msg.intensities))
                 # print("Encoding of the frames: {}".format(msg.encoding))
                 pbar.update(1)
                 is_joy_on = msg.joystick.data
+
                 curr_sg_idx = msg.sg_idx.data
+                is_collision = msg.is_collision.data
+                pose_diff = msg.pose_diff.data
+
                 data_raw = np.array(msg.waypoints.data, dtype=np.float32)
                 dims = msg.waypoints.layout.dim
                 rows = dims[0].size
@@ -394,13 +400,45 @@ class bag_extractor():
                 f.write("%d %d %d %d " % (cnt, msg.header.seq, msg.header.stamp.secs, msg.header.stamp.nsecs))
                 f.write("%d " % (is_joy_on))
                 f.write("%d " % (curr_sg_idx))
-                f.write('%f %f '% (xy_dist, orient_dist))
+                f.write("%f %f "% (xy_dist, orient_dist))
+                f.write("%f %f %f %f "%(pose_diff[0], pose_diff[1], pose_diff[2], pose_diff[3]))
+                f.write("%d "%is_collision)
                 for ii in range(0, rows):
                     x, y, qw, qz = np_waypoint[ii]
                     f.write("%f %f %f %f " % (x, y, qw, qz))
                 f.write("\n")
                 cnt += 1
             f.close()
+
+    # def extractWayPoints(self, bag, out_traj_path):
+    #     cnt = 0
+    #     waypoint_file = "%s/waypoints.txt" % out_traj_path
+    #     f = open(waypoint_file, 'w')
+    #     with tqdm(total=bag.get_message_count(self.waypoint_topic)) as pbar:
+    #         for topic, msg, t in bag.read_messages(topics=[self.waypoint_topic]):
+    #             # print("intensities {}".format(msg.intensities))
+    #             # print("Encoding of the frames: {}".format(msg.encoding))
+    #             pbar.update(1)
+    #             is_joy_on = msg.joystick.data
+    #             curr_sg_idx = msg.sg_idx.data
+    #             data_raw = np.array(msg.waypoints.data, dtype=np.float32)
+    #             dims = msg.waypoints.layout.dim
+    #             rows = dims[0].size
+    #             cols = dims[1].size
+    #             np_waypoint = data_raw.reshape((rows, cols))
+    #             xy_dist = msg.xy_dist.data
+    #             orient_dist = msg.orient_dist.data
+    #             # write info
+    #             f.write("%d %d %d %d " % (cnt, msg.header.seq, msg.header.stamp.secs, msg.header.stamp.nsecs))
+    #             f.write("%d " % (is_joy_on))
+    #             f.write("%d " % (curr_sg_idx))
+    #             f.write('%f %f '% (xy_dist, orient_dist))
+    #             for ii in range(0, rows):
+    #                 x, y, qw, qz = np_waypoint[ii]
+    #                 f.write("%f %f %f %f " % (x, y, qw, qz))
+    #             f.write("\n")
+    #             cnt += 1
+    #         f.close()
 
     def extractJoyMsgs(self, bag, out_traj_path):
         cnt = 0
@@ -497,15 +535,15 @@ class bag_extractor():
                 if self.config_colldata_extractor:
                     # For collision data collection
                     out_sg_path     = '%s/rel_subgoals' % (bag_extraction_path)
-                    out_wp_path     = '%s/waypoints' % (bag_extraction_path)
+                    out_navdata_path     = '%s/navdata' % (bag_extraction_path)
                     out_joy_path    = '%s/joy' % (bag_extraction_path)
                     os.mkdir(out_sg_path)
-                    os.mkdir(out_wp_path)
+                    os.mkdir(out_navdata_path)
                     os.mkdir(out_joy_path)
                     print("\r extracting curr relative sg from <%d> th bag: %s" % (bag_idx, bagfile_time_str))
                     self.extractSubGoals(self.bag, out_sg_path)
                     print("\r extracting waypoints from <%d> th bag: %s"%(bag_idx, bagfile_time_str))
-                    self.extractWayPoints(self.bag, out_wp_path)
+                    self.extractNavData(self.bag, out_navdata_path)
                     print("\r extracting joy cmds from <%d> th bag: %s" % (bag_idx, bagfile_time_str))
                     self.extractJoyMsgs(self.bag, out_joy_path)
 

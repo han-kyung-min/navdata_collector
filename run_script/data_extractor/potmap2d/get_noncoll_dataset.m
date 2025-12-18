@@ -15,6 +15,8 @@ function [ dataset ] = get_noncoll_dataset( bag_path, config, seed_ratio )
     sidx = context_size * ws ; % to ensure nonzero context idxs w.r.t curr idx
     eidx = (num_frames - max_frame_dist) - sidx  ;
     assert(eidx > num_seeds) ;
+
+    rng(0); 
     seeds = randperm(eidx, num_seeds) + sidx ;
     %seeds = randi([ context_size * ws, num_frames - max_frame_dist ], 1, num_seeds) ;
 

@@ -6,13 +6,10 @@ devgru_dir = '/home/hankm/python_ws/viznav/depth-nav' ;
 config_file = sprintf('%s/config/depth_nav.yaml',devgru_dir) ;
 config = ReadYaml(config_file) ;
 
-%data_path = '/media/mydata/former_datasets/colldata/bag_2025-08-19-12-05-34' ;
 % gen dataset subfolders
 data_root_path = '/media/mydata/former_datasets/former_all' ;
 bag_paths = dir( sprintf('%s/bag_*', data_root_path) ) ;
-
 %data_path = '/media/mydata/former_datasets/colldata/bag_2025-08-19-12-10-35' ;  % robot in idle
-%sync_data_path = sprintf('%s/synced', data_path) ;
 
 dataset = [] ;
 for idx =1:length(bag_paths)
@@ -24,10 +21,11 @@ for idx =1:length(bag_paths)
     end
 end
 
-num_dataset = length(dataset) / 2;
+num_dataset = 30000 ; %length(dataset) / 2;
 % copy to non_colldata 
-out_folder = '/media/mydata/former_datasets/colldata/mixed-25K' ;
-begin_offset = 5667 ; %num_dataset ;
+out_folder = '/media/mydata/former_datasets/colldata/noncolldata-30K' ;
+begin_offset = 0 ; %num_dataset ;
+
 
 rng(42);  
 myidx_list = [1:num_dataset] ; %randperm(num_dataset, 5700) ;

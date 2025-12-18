@@ -95,7 +95,7 @@ function poses = planKinodynamicPath(P0, P1, P2, v_max, w_max, FPS, opts)
 
 % NEW: arc-length uniform sampling with ≥16 poses
 base_n   = max(1, ceil(Ttot * FPS));
-min_n    = 16;
+min_n    = 3;
 target_n = max(min_n, base_n);
 
 if Stot < 1e-12

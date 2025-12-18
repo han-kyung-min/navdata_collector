@@ -106,21 +106,7 @@ function [costmap_i8, costmap_u8 ] = build_costmap(ranges, angles, cm_params)
     final_costmap(free_mask) = max( double(final_costmap(free_mask)), double(decayed_costmap(free_mask)) ) ;
     final_costmap = int8(final_costmap) ;
 
-    % === Add robot footprint as cost 50 ===
-    % [X, Y] = meshgrid(1:map_size, 1:map_size);
-    % dist = sqrt((X - half_map).^2 + (Y - half_map).^2);
-    % footprint_mask = dist <= robot_radius_px;
-    % final_costmap(footprint_mask & final_costmap ~= O) = 50;
-
     costmap_i8 = final_costmap ;
     costmap_u8 = remap_costmap(final_costmap) ;
     
-
-
-    % imshow(costmap_255)
-    % hold on; plot(map_size/2, map_size/2, 'ro')
-    % 
-    % imagesc(mapped_costmap);  % Visualize the result
-    % colormap('jet'); colorbar;
-
 end

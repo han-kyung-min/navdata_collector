@@ -2,6 +2,14 @@
 set -euo pipefail
 #set -x
 
+RED="\033[31m"
+NC="\033[0m"   # No Color
+
+error() {
+    echo -e "\033[31m[ERROR] $*\033[0m" >&2
+    exit 1
+}
+
 AINAV_PROJ_DIR="/home/hankm/python_ws/viznav/depth-nav/deployment"
 CATKIN_WS="${CATKIN_WS:-$HOME/catkin_ws}"
 NAVDATA_EXTRACTOR_DIR="$CATKIN_WS/src/navdata_collector/run_script/data_extractor"
@@ -12,6 +20,15 @@ PROJECT_DIR="$AINAV_PROJ_DIR" #"$(realpath "$SCRIPT_DIR/../..")"
 
 echo "AI-nav project dir     : $PROJECT_DIR"
 
+SRC_BAG_DIR="$(
+  grep -E '^[[:space:]]*inpath:' "$NAV_CFG" \
+    | sed 's/#.*//' \
+    | awk -F': *' '{print $2}' \
+    | xargs
+)"
+
+echo "src bag dir            : $SRC_BAG_DIR"
+
 TOPOMAP_DIR="$(
   grep -E '^[[:space:]]*topomap_path:' "$NAV_CFG" \
     | sed 's/#.*//' \
@@ -19,12 +36,7 @@ TOPOMAP_DIR="$(
     | xargs
 )"
 
-SRC_BAG_DIR="$(
-  grep -E '^[[:space:]]*inpath:' "$NAV_CFG" \
-    | sed 's/#.*//' \
-    | awk -F': *' '{print $2}' \
-    | xargs
-)"
+echo "Topomap dir            : $TOPOMAP_DIR"
 
 
 EXTRACTED_BAG_DIR="$(
@@ -34,46 +46,44 @@ EXTRACTED_BAG_DIR="$(
     | xargs
 )"
 
-[ -n "${TOPOMAP_DIR:-}" ] || { echo "[ERROR] 'topomap_name' is missing/empty in $NAV_CFG"; exit 1; }
-[ -n "${EXTRACTED_BAG_DIR:-}" ] || { echo "[ERROR] 'out_path' is missing/empty in $NAV_CFG"; exit 1; }
+
+echo "Ext bag dir            : $EXTRACTED_BAG_DIR"
+
+[ -n "${TOPOMAP_DIR:-}" ] || error "'topomap_name' is missing/empty in $NAV_CFG"
+[ -n "${EXTRACTED_BAG_DIR:-}" ] || error "'out_path' is missing/empty in $NAV_CFG"
 
 VAL=${SRC_BAG_DIR%/}              # drop trailing slash if any
 BAG_ID=${VAL##*/}           # -> T1-2025-09-17-17-44
 BASE_OUT_DIR="${EXTRACTED_BAG_DIR}/${BAG_ID}"
-[ -d "$BASE_OUT_DIR" ] || { echo "[ERROR] not found: $BASE_OUT_DIR"; exit 1; }
 
+[ -d "$BASE_OUT_DIR" ] || error "[ERROR] not found: $BASE_OUT_DIR"
 shopt -s nullglob
 kids=( "$BASE_OUT_DIR"/bag_* )
 # No candidates?
 [ ${#kids[@]} -gt 0 ] || { echo "[ERROR] no bag_* under $BASE_OUT_DIR"; exit 1; }
-
 EXTRACTED_DATA_DIR="$(ls -1dt "${kids[@]}" | head -n 1)"
 
-echo "Nav Config file : $NAV_CFG"
-echo $NAVDATA_EXTRACTOR_DIR
-echo $BAG_ID
+echo "Ext data dir           : $EXTRACTED_DATA_DIR"
 
-echo "TOPOMAP_DIR:  $TOPOMAP_DIR"  
-echo "ext data dir: $EXTRACTED_DATA_DIR"
+echo "Nav Config file        : $NAV_CFG"
+echo "NAVDATA extr directory : $NAVDATA_EXTRACTOR_DIR"
+echo "BAG ID                 : $BAG_ID"
 
 if [[ ! -f "$EXTRACTOR_SCRIPT" ]]; then
-    echo "[ERROR] Extractor script not found: $EXTRACTOR_SCRIPT" >&2
-    exit 1
+    error "Extractor script not found: $EXTRACTOR_SCRIPT" >&2
 fi
 if [[ ! -f "$NAV_CFG" ]]; then
-    echo "[ERROR] Navdata config not found: $NAV_CFG" >&2
-    exit 1
+    error "Navdata config not found: $NAV_CFG" >&2
 fi
 
 # --- check for nav_data file ---
 nav_file="$SRC_BAG_DIR/nav_data"
 if [ ! -f "$nav_file" ]; then
-  echo "[ERROR] Required file 'nav_data' not found in $SRC_BAG_DIR"
-  echo "Make sure to point to the bag file for a topomap"
-  exit 1
+  error "[ERROR] Required file 'nav_data' not found in $SRC_BAG_DIR"
+  error "Make sure to point to the bag file for a topomap"
 fi
 
-echo "Found nav_data file: $nav_file"
+echo "Found nav_data file    : $nav_file"
 
 # --- Run extraction inside ROS + conda environment ---
 source ~/catkin_ws/install/setup.bash
@@ -87,7 +97,7 @@ python $EXTRACTOR_SCRIPT "../../param/navdata_collector.yaml"
 # 1. Make directory
 
 if [[ -e "$TOPOMAP_DIR" ]]; then
-  echo "[ERROR] Topomap dir already exists. Remove $TOPOMAP_DIR before creating a new one" >&2
+  error "Topomap dir already exists. Remove $TOPOMAP_DIR before creating a new one" >&2
   exit 1
 fi
 
@@ -97,7 +107,6 @@ mkdir -p "$TOPOMAP_DIR"
 if compgen -G "${EXTRACTED_DATA_DIR}/*" > /dev/null; then
   cp -a -- "${EXTRACTED_DATA_DIR}"/map* "$TOPOMAP_DIR"/
 fi
-
 
 echo "finished copying topomap, creating slam_poses.txt"
 # 3. gen slam_poses
@@ -109,7 +118,6 @@ rosrun navdata_collector dump_posegraph $PATH_TO_PGO $OUT_POSE_TXT
 echo "finished decoding PGO file"
 
 cd "${AINAV_PROJ_DIR}/src"
-
 
 python create_synced_topomap.py -i "$EXTRACTED_DATA_DIR" -o "$TOPOMAP_DIR"
 

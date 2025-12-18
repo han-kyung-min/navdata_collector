@@ -56,7 +56,7 @@
 /move_base/local_costmap/costmap
 /map
 
-/waypoint
+/navdata
 /curr_rel_subgoal
     "
     />
