@@ -39,7 +39,7 @@ TOPOMAP_DIR="$(
 echo "Topomap dir            : $TOPOMAP_DIR"
 
 
-EXTRACTED_BAG_DIR="$(
+BASE_EXTRACT_DIR="$(
   grep -E '^[[:space:]]*outpath:' "$NAV_CFG" \
     | sed 's/#.*//' \
     | awk -F': *' '{print $2}' \
@@ -47,24 +47,23 @@ EXTRACTED_BAG_DIR="$(
 )"
 
 
-echo "Ext bag dir            : $EXTRACTED_BAG_DIR"
+echo "Base Ext dir(processed): $BASE_EXTRACT_DIR"
 
 [ -n "${TOPOMAP_DIR:-}" ] || error "'topomap_name' is missing/empty in $NAV_CFG"
-[ -n "${EXTRACTED_BAG_DIR:-}" ] || error "'out_path' is missing/empty in $NAV_CFG"
+[ -n "${BASE_EXTRACT_DIR:-}" ] || error "'out_path' is missing/empty in $NAV_CFG"
 
 VAL=${SRC_BAG_DIR%/}              # drop trailing slash if any
 BAG_ID=${VAL##*/}           # -> T1-2025-09-17-17-44
-BASE_OUT_DIR="${EXTRACTED_BAG_DIR}/${BAG_ID}"
+BASE_OUT_DIR="${BASE_EXTRACT_DIR}/${BAG_ID}"
 
-[ -d "$BASE_OUT_DIR" ] || error "[ERROR] not found: $BASE_OUT_DIR"
+#[ -d "$BASE_OUT_DIR" ] || error "base_out dir not found: $BASE_OUT_DIR"
 shopt -s nullglob
 kids=( "$BASE_OUT_DIR"/bag_* )
 # No candidates?
-[ ${#kids[@]} -gt 0 ] || { echo "[ERROR] no bag_* under $BASE_OUT_DIR"; exit 1; }
+[ ${#kids[@]} -gt 0 ] || { error "no bag_* under $BASE_OUT_DIR"; exit 1; }
 EXTRACTED_DATA_DIR="$(ls -1dt "${kids[@]}" | head -n 1)"
 
 echo "Ext data dir           : $EXTRACTED_DATA_DIR"
-
 echo "Nav Config file        : $NAV_CFG"
 echo "NAVDATA extr directory : $NAVDATA_EXTRACTOR_DIR"
 echo "BAG ID                 : $BAG_ID"
@@ -104,18 +103,28 @@ fi
 mkdir -p "$TOPOMAP_DIR"
 
 #2. Copy extracted data
-if compgen -G "${EXTRACTED_DATA_DIR}/*" > /dev/null; then
-  cp -a -- "${EXTRACTED_DATA_DIR}"/map* "$TOPOMAP_DIR"/
+shopt -s nullglob
+map_files=("${EXTRACTED_DATA_DIR}"/map*)
+
+if (( ${#map_files[@]} > 0 )); then
+    cp -a -- "${map_files[@]}" "$TOPOMAP_DIR"/
+else
+    error "No map files found in ${EXTRACTED_DATA_DIR}"
 fi
 
 echo "finished copying topomap, creating slam_poses.txt"
 # 3. gen slam_poses
 PATH_TO_PGO="$TOPOMAP_DIR/map"
-
 OUT_POSE_TXT="$TOPOMAP_DIR/slam_poses.txt"
+
 rosrun navdata_collector dump_posegraph $PATH_TO_PGO $OUT_POSE_TXT
 
 echo "finished decoding PGO file"
+
+if [ ! -f "$nav_file" ]; then
+  error "Failed to create $OUT_POSE_TXT.. Something wrong here.." >&2
+fi
+
 
 cd "${AINAV_PROJ_DIR}/src"
 

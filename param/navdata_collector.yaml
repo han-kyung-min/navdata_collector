@@ -44,7 +44,7 @@ navdata_extractor:
     map_topic:          "/map"
     tf_topic:           "/tf"
     
-    # topomap extractor
+    # the final out topomap path
     topomap_path: "/home/hankm/python_ws/viznav/depth-nav/deployment/topomaps/T0"  # out topomap path
 
 colldata_extractor:
