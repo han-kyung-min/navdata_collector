@@ -1,0 +1,6 @@
+name: navdata
+channels:
+  - defaults
+dependencies:
+  - python=3.8.20
+prefix: /home/hankm/miniconda3/envs/navdata
