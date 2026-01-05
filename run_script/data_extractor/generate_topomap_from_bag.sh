@@ -56,7 +56,31 @@ VAL=${SRC_BAG_DIR%/}              # drop trailing slash if any
 BAG_ID=${VAL##*/}           # -> T1-2025-09-17-17-44
 BASE_OUT_DIR="${BASE_EXTRACT_DIR}/${BAG_ID}"
 
-#[ -d "$BASE_OUT_DIR" ] || error "base_out dir not found: $BASE_OUT_DIR"
+
+# --- Ensure outpath exists ---
+mkdir -p -- "$BASE_OUT_DIR" || error "failed to create outpath: $BASE_OUT_DIR"
+
+# --- Define inpath from YAML (SRC_BAG_DIR) ---
+INPATH_DIR="$SRC_BAG_DIR"
+[[ -n "${INPATH_DIR:-}" ]] || error "inpath is empty in $NAV_CFG"
+[[ -d "$INPATH_DIR" ]] || error "inpath dir not found: $INPATH_DIR"
+
+# --- Find bag files in inpath ---
+shopt -s nullglob
+bag_files=( "$INPATH_DIR"/*.bag )
+shopt -u nullglob
+
+(( ${#bag_files[@]} == 1 )) || error "Expected exactly ONE .bag file in $INPATH_DIR, found ${#bag_files[@]}"
+BAG_FILE="${bag_files[0]}"
+# --- Create a NEW timestamped output folder under BASE_OUT_DIR ---
+BAG_NAME="$(basename "$BAG_FILE" .bag)"   # 
+EXTRACTED_DATA_DIR="$BASE_OUT_DIR/$BAG_NAME"
+mkdir -p -- "$EXTRACTED_DATA_DIR" || error "failed to create: $EXTRACTED_DATA_DIR"
+
+echo "[INFO] Using output dir: $EXTRACTED_DATA_DIR"
+echo "[INFO] Bag inputs:"
+printf '  - %s\n' "${bag_files[@]}"
+
 shopt -s nullglob
 kids=( "$BASE_OUT_DIR"/bag_* )
 # No candidates?
