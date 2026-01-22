@@ -228,8 +228,6 @@ class bag_extractor():
 
                 scan_file = "%s/%05d.txt" % (out_scan_path, cnt)
                 f_scan = open(scan_file, "w")
-                #f_scan.write('{} '.format( msg.ranges) )
-                #f_scan.write('\n')
                 angle = msg.angle_min
                 for r in msg.ranges:
                     f_scan.write('%.5f %.5f\n'% (angle, r))

@@ -14,10 +14,13 @@ import tf
 import datetime
 import shutil
 from pathlib import Path
+from PIL import Image as PILImage
+from datetime import datetime
 
 from std_srvs.srv import Empty
 from std_msgs.msg import Bool
 from navdata_collector.msg import rgbd
+from nav_msgs.msg import OccupancyGrid
 from slam_toolbox_msgs.srv import SerializePoseGraph, SaveMap
 import roslaunch
 
@@ -96,6 +99,39 @@ def shutdown_and_wait(launch_obj, name):
         print(f"[WARN] Failed to shutdown {name}: {e}")
 
 
+def save_map(self, base_path, msg):
+    w, h = msg.info.width, msg.info.height
+    data = np.array(msg.data, dtype=np.int16).reshape((h, w))
+
+    img = np.zeros((h, w), dtype=np.uint8)
+    img[data == 0] = 254
+    img[data == 100] = 0
+    img[data == -1] = 205
+
+    #map_file = datetime.now().strftime(f"%Y-%m-%d-%H-%M.png")
+    map_file_path = base_path + "/slam_map.png" #+ map_file
+
+    img = np.flipud(img)
+    PILImage.fromarray(img, mode="L").save(map_file_path)
+
+    meta = {
+        "image": "slam_map.png",
+        "resolution": msg.info.resolution,
+        "origin": [
+            msg.info.origin.position.x,
+            msg.info.origin.position.y,
+            0.0
+        ],
+        "negate": 0,
+        "occupied_thresh": 0.65,
+        "free_thresh": 0.196
+    }
+    yaml_file_path = base_path + "/slam_map.yaml"
+
+    with open(yaml_file_path, "w") as f:
+        yaml.safe_dump(meta, f, sort_keys=False)
+
+    self.get_logger().info("Saved slam_map.png and slam_map.yaml")
 
 
 def main(argv):
@@ -227,6 +263,10 @@ def main(argv):
             print("[INFO] Map saved.")
         except Exception as e:
             print("[WARN] Map save failed:", e)
+
+        # Save SLAM map img
+        msg = rospy.wait_for_message("/map", OccupancyGrid, timeout=5.0)
+        save_map(bagfile_path, msg)
 
         shutdown_and_wait(launch3, "rosbag recorder")
         shutdown_and_wait(launch2, "data collector")

@@ -284,6 +284,136 @@ class metadata_syncer():
         print("******************************************************************************************************************* \n")
         return corr_table
 
+
+
+    def match_rgb_depth_scan_odom_tf( self, rgb_info, depth_info, scan_info, odom,
+                                 tf_m2o, tf_m2b, my_time_diff= 0.1):
+        # time_thr unit is < ms > i.e.  nsec / 10^6 )
+        rgb_size = len(rgb_info)
+        corr_table = np.zeros( [rgb_size, 6], dtype=np.uint )  # rgb, depth, odom, tf_m2o, tf_m2b
+        rgb_depth_matching_warn = 0
+        rgb_scan_matching_warn = 0
+        rgb_odom_matching_warn = 0
+        rgb_tf_m2o_matching_warn = 0   # m2o
+        rgb_tf_m2b_matching_warn = 0   # m2b
+        rgbd_time_diffs = np.zeros( [rgb_size,1] )
+        rgb_scan_time_diffs = np.zeros( [rgb_size,1])
+        rgb_odom_time_diffs = np.zeros( [rgb_size,1] )
+        rgb_tf_m2o_time_diffs = np.zeros( [rgb_size, 1])
+        rgb_tf_m2b_time_diffs = np.zeros( [rgb_size, 1])
+
+        print("\n\n rgb_size %d\n\n" % rgb_size)
+
+        for rgb_idx in range(0, rgb_size):
+            rgb_s = rgb_info[rgb_idx, 4]
+            rgb_ns= rgb_info[rgb_idx, 5]
+            rgb_time = rgb_s + rgb_ns / (10 ** 9)
+
+            # find the assoicated depth data
+            depth_secs = depth_info[:, 4]
+            depth_nsecs= depth_info[:, 5] / (10 ** 9)
+            depth_time_all = depth_secs + depth_nsecs
+
+            depth_rgb_time_diff = abs( depth_time_all - rgb_time )
+            idx = np.where( depth_rgb_time_diff == np.min(depth_rgb_time_diff) )[0]
+            matching_depth_idx = idx[0]
+            rgbd_time_diffs[rgb_idx] = np.min(depth_rgb_time_diff)
+
+            if( np.min(depth_rgb_time_diff) > my_time_diff ):
+                msg = "warning: @ rgb_idx <%d> min depth and rgb time diff is greator than %f (ms) \n"% (rgb_idx, my_time_diff * 1000)
+                print('\033[33m' + msg + '\33[0m')
+                rgb_depth_matching_warn += 1
+
+            # find the associated scan data
+            scan_secs = scan_info[:, 2]
+            scan_nsecs= scan_info[:, 3] / (10 ** 9)
+            scan_time_all = scan_secs + scan_nsecs
+
+            scan_rgb_time_diff = abs( scan_time_all - rgb_time )
+            idx = np.where( scan_rgb_time_diff == np.min(scan_rgb_time_diff) )[0]
+            matching_scan_idx = idx[0]
+            rgb_scan_time_diffs[rgb_idx] = np.min(scan_rgb_time_diff)
+
+            if( np.min(scan_rgb_time_diff) > my_time_diff ):
+                msg = "warning: @ rgb_idx <%d> min scan and rgb time diff is greator than %f (ms) \n"% (rgb_idx, my_time_diff * 1000)
+                print('\033[33m' + msg + '\33[0m')
+                rgb_scan_matching_warn += 1
+
+            # find the associated odom data
+            odom_secs = odom[:, 2]
+            odom_nsecs = odom[:, 3] / (10 ** 9)
+            odom_time_all = odom_secs + odom_nsecs
+            odom_rgb_time_diff = abs( odom_time_all - rgb_time )
+            idx = np.where( odom_rgb_time_diff == np.min(odom_rgb_time_diff) )[0]
+            matching_odom_idx = idx[0]
+            rgb_odom_time_diffs[rgb_idx] = np.min(odom_rgb_time_diff)
+
+            if( np.min(odom_rgb_time_diff) > my_time_diff ):
+                msg = "warning: @ rgb_idx <%d> min odom and rgb time diff is %f (ms) \n" % (rgb_idx, np.min(odom_rgb_time_diff) * 1000)
+                warnings.warn( msg )
+                print('\033[33m' + msg + '\33[0m')
+                rgb_odom_matching_warn += 1
+
+            # find the associated TF m2o data
+            tf_m2o_secs = tf_m2o[:, 2]
+            tf_m2o_nsecs = tf_m2o[:, 3] / 10 ** 9
+            tf_m2o_time_all = tf_m2o_secs + tf_m2o_nsecs
+            rgb_tf_m2o_time_diff = abs( tf_m2o_time_all - rgb_time )
+            idx = np.where( rgb_tf_m2o_time_diff == np.min(rgb_tf_m2o_time_diff) )[0]
+            matching_tf_m2o_idx = idx[0]
+            rgb_tf_m2o_time_diffs[rgb_idx] = np.min(rgb_tf_m2o_time_diff)
+
+            if( np.min(rgb_tf_m2o_time_diff) > my_time_diff ):
+                msg = "warning: @ rgb_idx <%d> min tf map 2 odom and rgb time diff is greator than %f (ms) \n" % (rgb_idx, my_time_diff * 1000)
+                warnings.warn( msg )
+                print('\033[33m' + msg + '\33[0m')
+                rgb_tf_m2o_matching_warn += 1
+
+            # find the associated TF m2b data
+            tf_m2b_secs = tf_m2b[:, 2]
+            tf_m2b_nsecs = tf_m2b[:, 3] / 10 ** 9
+            tf_m2b_time_all = tf_m2b_secs + tf_m2b_nsecs
+            rgb_tf_m2b_time_diff = abs( tf_m2b_time_all - rgb_time )
+            idx = np.where( rgb_tf_m2b_time_diff == np.min(rgb_tf_m2b_time_diff) )[0]
+            matching_tf_m2b_idx = idx[0]
+            rgb_tf_m2b_time_diffs[rgb_idx] = np.min(rgb_tf_m2b_time_diff)
+
+            if( np.min(rgb_tf_m2b_time_diff) > my_time_diff ):
+                msg = "warning: @ rgb_idx <%d> min tf (map 2 base) and rgb time diff is greator than %f (ms) \n" % (rgb_idx, my_time_diff * 1000)
+                warnings.warn( msg )
+                #print('\033[33m' + msg + '\33[0m')
+                rgb_tf_m2b_matching_warn += 1
+
+            corr_table[rgb_idx] = [rgb_idx, matching_depth_idx, matching_scan_idx,
+                                   matching_odom_idx, matching_tf_m2o_idx, matching_tf_m2b_idx]
+
+        if( rgb_tf_m2b_matching_warn > 0):
+            msg = "warning: |tf_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, rgb_tf_m2b_matching_warn)
+            print('\033[33m' + msg + '\33[0m')
+
+        if( rgb_odom_matching_warn > 0):
+            msg = "warning: |odom_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, rgb_odom_matching_warn)
+            print('\033[33m' + msg + '\33[0m')
+
+        if( rgb_depth_matching_warn > 0):
+            msg = "warning: |depth_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, rgb_depth_matching_warn)
+            print('\033[33m' + msg + '\33[0m')
+
+        if( rgb_scan_matching_warn > 0):
+            msg = "warning: |scan_time - rgb_time| > %f for %d times \n"% (my_time_diff * 1000, rgb_scan_matching_warn)
+            print('\033[33m' + msg + '\33[0m')
+
+        print("******************************************************************************************************************* \n")
+        print("rgb & depth time diff report (ms):  min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgbd_time_diffs)*1000, np.max(rgbd_time_diffs)*1000, np.mean(rgbd_time_diffs)*1000 ) )
+        print("rgb & scan time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n" % (np.min(rgb_scan_time_diffs) * 1000, np.max(rgb_scan_time_diffs) * 1000, np.mean(rgb_scan_time_diffs) * 1000))
+        print("rgb & odom time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_odom_time_diffs)*1000, np.max(rgb_odom_time_diffs)*1000, np.mean(rgb_odom_time_diffs)*1000 ) )
+        print("rgb & tf (m2o) time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_tf_m2o_time_diffs)*1000, np.max(rgb_tf_m2o_time_diffs)*1000, np.mean(rgb_tf_m2o_time_diffs)*1000 ) )
+        print("rgb & tf (m2b) time diff report (ms):   min: %.5f \t max: %.5f \t avg: %.5f \n"% (np.min(rgb_tf_m2b_time_diffs)*1000, np.max(rgb_tf_m2b_time_diffs)*1000, np.mean(rgb_tf_m2b_time_diffs)*1000 ) )
+        print("******************************************************************************************************************* \n")
+        return corr_table
+
+
+
     def match_rgb_depth_odom_twist( self, rgb_info, depth_info, odom, twist, time_diff_thr_s = 0.01):
         # time_thr unit is < ms > i.e.  nsec / 10^6 )
         rgb_size = len(rgb_info)
@@ -468,10 +598,12 @@ class metadata_syncer():
                 np.savetxt(corr_table_file, corr_table, fmt='%d')
                 print("time matched table is saved in %s\n"%corr_table_file )
             else:
-                corr_table  = self.match_rgb_depth_odom_tf(rgb_info=rgb_info, depth_info=depth_info, odom=odom,
-                                                           tf_m2o= tf_m2o, tf_m2b= tf_m2b, my_time_diff=0.1)
-                # corr_table = [rgb_idx, matching_depth_idx, matching_odom_idx]
-                corr_table_file = '%s/rgb_depth_odom_tf_matches.txt' % rawdata_dir
+                # corr_table  = self.match_rgb_depth_odom_tf(rgb_info=rgb_info, depth_info=depth_info, odom=odom,
+                #                                            tf_m2o= tf_m2o, tf_m2b= tf_m2b, my_time_diff=0.1)
+                corr_table = self.match_rgb_depth_scan_odom_tf(rgb_info=rgb_info, depth_info=depth_info,
+                                                               scan_info=scan_info, odom=odom, tf_m2o=tf_m2o,
+                                                               tf_m2b=tf_m2b, my_time_diff=0.1)
+                corr_table_file = '%s/rgb_depth_scan_odom_tf_matches.txt' % rawdata_dir
                 np.savetxt(corr_table_file, corr_table, fmt='%d')
                 print("time matched table is saved in %s\n"%corr_table_file )
             
@@ -496,6 +628,8 @@ class metadata_syncer():
             [h_rgb, w_rgb] = np.loadtxt('%s/rgb/rgb_info.txt'%metadata_dir)[0][1:3]
             [h_dep, w_dep] = np.loadtxt('%s/depth/depth_info.txt'%metadata_dir)[0][1:3]
 
+            # load scan
+
             # load odom / tf data
             odom = np.loadtxt('%s/traj/odom.txt' % metadata_dir)
             tf_m2o = np.loadtxt('%s/traj/tf_m2o.txt' % metadata_dir)
@@ -518,8 +652,8 @@ class metadata_syncer():
                 # rgb_loc = 0; depth_loc = 1; scan_loc=2; odom_loc = 3; tf_m2o_loc = 4; tf_m2b_loc = 5; wp_loc = 6;  sg_loc = 7; joy_loc = 8
                 # corr_table = [rgb_idx, matching_depth_idx, matching_odom_idx, matchin_wp_idx, matching_sg_idx, matching_joy_idx ]
             else:
-                corr_table_file = '%s/rgb_depth_odom_tf_matches.txt' % metadata_dir
-                rgb_loc = 0; depth_loc = 1; odom_loc = 2; tf_m2o_loc = 3; tf_m2b_loc = 4
+                corr_table_file = '%s/rgb_depth_scan_odom_tf_matches.txt' % metadata_dir
+                rgb_loc = 0; depth_loc = 1; scan_loc = 2; odom_loc = 3; tf_m2o_loc = 4; tf_m2b_loc = 5
                 # corr_table = [rgb_idx, matching_depth_idx, matching_odom_idx, matching_tf_m2o_idx, matching_tf_m2b_idx]
             corr_table = np.loadtxt(corr_table_file).astype('uint64')
 
@@ -572,12 +706,12 @@ class metadata_syncer():
                     sync_joy_arr[ii] = sync_joy_line
                 np.savetxt(sync_joy_file, sync_joy_arr)
 
-                # scan data
-                for ii in range(0, len(corr_table)):
-                    print('saving synced %d th scan' % ii, end='\r')
-                    src_scan_file = '%s/scan/%05d.txt' % (metadata_dir, corr_table[ii][scan_loc])
-                    dst_sync_scan_file = '%s/synced/scan%05d.txt' % (metadata_dir, ii)
-                    shutil.copyfile(src_scan_file, dst_sync_scan_file)
+            # scan data
+            for ii in range(0, len(corr_table)):
+                print('saving synced %d th scan' % ii, end='\r')
+                src_scan_file = '%s/scan/%05d.txt' % (metadata_dir, corr_table[ii][scan_loc])
+                dst_sync_scan_file = '%s/synced/scan%05d.txt' % (metadata_dir, ii)
+                shutil.copyfile(src_scan_file, dst_sync_scan_file)
 
             for ii in range(0, len(corr_table)) :
                 print('saving synced %d th metadata' % ii, end='\r')
