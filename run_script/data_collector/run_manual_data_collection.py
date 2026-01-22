@@ -15,7 +15,7 @@ import datetime
 import shutil
 from pathlib import Path
 from PIL import Image as PILImage
-from datetime import datetime
+#from datetime import datetime
 
 from std_srvs.srv import Empty
 from std_msgs.msg import Bool
@@ -99,7 +99,7 @@ def shutdown_and_wait(launch_obj, name):
         print(f"[WARN] Failed to shutdown {name}: {e}")
 
 
-def save_map(self, base_path, msg):
+def save_map(base_path, msg):
     w, h = msg.info.width, msg.info.height
     data = np.array(msg.data, dtype=np.int16).reshape((h, w))
 
@@ -130,8 +130,6 @@ def save_map(self, base_path, msg):
 
     with open(yaml_file_path, "w") as f:
         yaml.safe_dump(meta, f, sort_keys=False)
-
-    self.get_logger().info("Saved slam_map.png and slam_map.yaml")
 
 
 def main(argv):
