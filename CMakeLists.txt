@@ -43,8 +43,9 @@ set(SLAMTBX_INCDIR  "${SLAMTBX_PREFIX}/include")
 add_message_files(
   FILES
   rgbd.msg
-  waypoint_stamped.msg
+  #waypoint_stamped.msg
   navdata_stamped.msg
+  navstep_stamped.msg
 )
 
 
