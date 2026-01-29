@@ -1,12 +1,16 @@
-<!-- move base -->
+<!-- move base & slam -->
 <launch>
-    <arg name="map_file_name" default=""/> 
-    <include file="$(find navdata_collector)/launch/includes/sync_slam.launch">
-        <arg name="map_file_name" value="$(arg map_file_name)"/>
-    </include>
+  <arg name="map_file_name" default=""/>
+  <arg name="start_x" default="0.0"/>
+  <arg name="start_y" default="0.0"/>
+  <arg name="start_yaw" default="0.0"/>
 
-    <include file="$(find navdata_collector)/launch/includes/move_former.launch">
-    </include>
-  
-  
+  <include file="$(find navdata_collector)/launch/includes/sync_slam.launch">
+    <arg name="map_file_name" value="$(arg map_file_name)"/>
+    <arg name="start_x" value="$(arg start_x)"/>
+    <arg name="start_y" value="$(arg start_y)"/>
+    <arg name="start_yaw" value="$(arg start_yaw)"/>
+  </include>
+
+  <include file="$(find navdata_collector)/launch/includes/move_former.launch"/>
 </launch>

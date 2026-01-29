@@ -94,6 +94,24 @@ def finish_callback(msg):
     global finish_flag
     finish_flag = msg.data
 
+def load_start_pose_from_slam_poses(map_base: str):
+    """
+    map_base: .../<topomap_name>/map   (NO extension)
+    expects:  .../<topomap_name>/slam_poses.txt
+    returns: (x, y, yaw)
+    """
+    topomap_dir = os.path.dirname(map_base)   # folder containing map + slam_poses.txt
+    pose_file = os.path.join(topomap_dir, "slam_poses.txt")
+    if not os.path.isfile(pose_file):
+        raise FileNotFoundError(f"Missing slam_poses.txt: {pose_file}")
+
+    poses = np.loadtxt(pose_file)
+    poses = np.atleast_2d(poses)
+
+    # Your format: [node_id, x, y, yaw]  (based on your other script using poses[0][1:])
+    x, y, yaw = poses[0][1], poses[0][2], poses[0][3]
+    return float(x), float(y), float(yaw)
+
 def main(argv):
     
     parser = argparse.ArgumentParser()
@@ -110,8 +128,7 @@ def main(argv):
     map_base = '%s/map'%topomap_dir
     init_pose_file = '%s/init_pose'%topomap_dir
     print("map_file_name: %s"%map_base)
-    print("init_pose file: %s"%init_pose_file )
-    
+
     global joy_msg, trigger_time, reached_goal_msg
     
     base_dir = os.path.dirname(os.path.abspath(os.path.dirname(os.path.abspath(os.path.dirname(__file__)))))
@@ -177,20 +194,30 @@ def main(argv):
     print('\033[32m' + out_msg + '\33[0m')
     
     last_time = start #time.time() 
-
-    #for round_idx in range(0, num_explorations):
-        # make data dir
-        # launch files
-    roslaunch.configure_logging(uuid)
-        
+    # uuid must be created BEFORE ROSLaunchParent
+    uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+   
+    x0, y0, yaw0 = load_start_pose_from_slam_poses(map_base)
+    launch_path = os.path.join(pkg_dir, "launch", "includes", "move_former_sync_slam.launch")
     cli_arg1 = [
-        "%s/launch/includes/move_former_sync_slam.launch" % pkg_dir,
-        "map_file_name:=%s" % map_base   # NOTE: := not =
+        launch_path,
+        f"map_file_name:={map_base}",
+        f"start_x:={x0}",
+        f"start_y:={y0}",
+        f"start_yaw:={yaw0}",
     ]
-    roslaunch1 = [(roslaunch.rlutil.resolve_launch_arguments(cli_arg1)[0], cli_arg1[1:])]
-    
-    #launch1 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/includes/move_former_slam.launch"%pkg_dir, "map_file=%s" %map_base] )
+    resolved = roslaunch.rlutil.resolve_launch_arguments(cli_arg1)[0]
+    roslaunch1 = [(resolved, cli_arg1[1:])]
+    roslaunch.configure_logging(uuid)
     launch1 = roslaunch.parent.ROSLaunchParent(uuid, roslaunch1)
+    
+    #cli_arg1 = [
+        #"%s/launch/includes/move_former_sync_slam.launch" % pkg_dir,
+        #"map_file_name:=%s" % map_base   # NOTE: := not =
+    #]
+    #roslaunch1 = [(roslaunch.rlutil.resolve_launch_arguments(cli_arg1)[0], cli_arg1[1:])]
+    #launch1 = roslaunch.parent.ROSLaunchParent(uuid, roslaunch1)
+
     
     launch2 = roslaunch.parent.ROSLaunchParent(uuid, ["%s/launch/manual_collector_async.launch"%pkg_dir])
 
@@ -211,9 +238,7 @@ def main(argv):
         rospy.delete_param("/slam_toolbox")
         rospy.sleep(0.1)  # tiny guard
 
-    #reset_ekf_to_zero()
-    #time.sleep(0.2)
-    #init_pose_yaml = rospy.get_param("~init_pose_file", init_pose_file)                          
+                      
     reset_slam_pose(topomap_dir=topomap_dir, ns="/slam_toolbox", mapping_mode=True)
     
     launch2.start()

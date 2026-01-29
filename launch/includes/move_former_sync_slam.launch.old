@@ -1,0 +1,12 @@
+<!-- move base -->
+<launch>
+    <arg name="map_file_name" default=""/> 
+    <include file="$(find navdata_collector)/launch/includes/sync_slam.launch">
+        <arg name="map_file_name" value="$(arg map_file_name)"/>
+    </include>
+
+    <include file="$(find navdata_collector)/launch/includes/move_former.launch">
+    </include>
+  
+  
+</launch>

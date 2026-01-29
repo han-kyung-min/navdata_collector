@@ -1,0 +1,13 @@
+<!-- sync_slam -->
+<launch>
+    <arg name="map_file_name" default=""/>
+  <!-- start sync SLAM -->
+    <node pkg="slam_toolbox" type="sync_slam_toolbox_node" name="slam_toolbox">  <!--output="screen"-->
+        <!--remap from="/scan"  to="/base_scan"/-->
+        <!--rosparam command="delete" param="/slam_toolbox/map_file_name"/>
+        <rosparam command="delete" param="/slam_toolbox/map_start_pose"/-->
+        <rosparam command="load" file="$(find slam_toolbox)/config/mapper_params_lifelong.yaml" />
+        <param name="map_file_name" value="$(arg map_file_name)" />
+        <param name="map_start_at_dock" value="true" type="bool"/>
+    </node>
+</launch>
