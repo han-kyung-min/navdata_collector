@@ -127,14 +127,23 @@ fi
 mkdir -p "$TOPOMAP_DIR"
 
 #2. Copy extracted data
-shopt -s nullglob
-map_files=("${EXTRACTED_DATA_DIR}"/map*)
+# shopt -s nullglob
+# map_files=("${EXTRACTED_DATA_DIR}"/map*)
+# 
+# if (( ${#map_files[@]} > 0 )); then
+#     cp -a -- "${map_files[@]}" "$TOPOMAP_DIR"/
+# else
+#     error "No map files found in ${EXTRACTED_DATA_DIR}"
+# fi
+cp -av -- \
+  "${EXTRACTED_DATA_DIR}/map.data" \
+  "${EXTRACTED_DATA_DIR}/map.posegraph" \
+  "$TOPOMAP_DIR"/
 
-if (( ${#map_files[@]} > 0 )); then
-    cp -a -- "${map_files[@]}" "$TOPOMAP_DIR"/
-else
-    error "No map files found in ${EXTRACTED_DATA_DIR}"
-fi
+cp -av -- \
+  "${EXTRACTED_DATA_DIR}/slam_map.png" \
+  "${EXTRACTED_DATA_DIR}/slam_map.yaml" \
+  "$TOPOMAP_DIR"/
 
 echo "finished copying topomap, creating slam_poses.txt"
 # 3. gen slam_poses

@@ -488,6 +488,9 @@ class bag_extractor():
                 # copy slam map if exist
                 data_file = glob.glob('%s/*.data'%self.bagfile_path)
                 pgo_file = glob.glob('%s/*.posegraph'%self.bagfile_path)
+                map_img_file = glob.glob('%s/*.png'%self.bagfile_path)
+                map_yaml_file = glob.glob('%s/*.yaml'%self.bagfile_path)
+
                 target_bag_file_path = glob.glob('%s/bag_*'%self.bagfile_path)
                 print(self.bagfile_path)
                 print(target_bag_file_path)
@@ -497,6 +500,11 @@ class bag_extractor():
                     shutil.copy(data_file[0], '%s/map.data'%bag_extraction_path)
                 if pgo_file:
                     shutil.copy(pgo_file[0], '%s/map.posegraph'%bag_extraction_path)
+                if map_img_file:
+                    shutil.copy(map_img_file[0], '%s/slam_map.png'%bag_extraction_path)
+                if map_yaml_file:
+                    shutil.copy(map_yaml_file[0], '%s/slam_map.yaml' % bag_extraction_path)
+
                 #if target_bag_file:
                 #    shutil.copy(target_bag_file_path[0], '%s/%s'%(bag_extraction_path, target_bag_file) )
 
