@@ -168,9 +168,11 @@ def main(argv):
     max_nav_time = config['navdata_collector']['max_nav_time']
 
     print("waiting for core msgs ...  \n")
+    odom_msg = None
     try:
-        rospy.wait_for_message(config['navdata_collector']['odom_topic'], nav_msgs.msg.Odometry, timeout=2)
+        odom_msg = rospy.wait_for_message(config['navdata_collector']['odom_topic'], nav_msgs.msg.Odometry, timeout=2)
         out_msg = "Got %s msg \n" % config['navdata_collector']['odom_topic']
+
         print('\033[32m' + out_msg + '\33[0m')
     except:
         out_msg = "It seems there is no  %s msg ... Please check your system \n" % config['navdata_collector']['odom_topic']
@@ -191,6 +193,21 @@ def main(argv):
         out_msg = "It seems there is no %s msg ... Please check your system \n"%config['navdata_collector']['depth_topic']
         print('\033[33m' + out_msg + '\33[0m')
         exit(-1)
+
+    x = odom_msg.pose.pose.position.x
+    y = odom_msg.pose.pose.position.y
+    print("odom: %.3f (m) %.3f (m)" % (x, y))
+
+    if abs(x) > 0. and abs(y) > 0.:
+        answer = input("----------------------------------------------------------------\n\n\n"
+                       "\tDid you reboot the robot ? (y/n): \n\n\n"
+                       "----------------------------------------------------------------\n")
+
+        if answer.lower() == "y":
+            print("Stepping to next")
+        else:
+            print("Make sure to reboot the robot to reset odom (0,0,0) \n")
+            exit(0)
 
     out_msg = "I found all core msgs "
     print('\033[32m' + out_msg + '\33[0m')

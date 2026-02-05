@@ -1,0 +1,19 @@
+# TO reset (set the curr PC itself is the master)
+
+unset ROS_HOSTNAME
+export ROS_MASTER_URI=http://127.0.0.1:11311
+export ROS_IP=127.0.0.1
+
+or
+
+unset ROS_HOSTNAME
+export ROS_MASTER_URI=http://<This PC IP>:11311
+export ROS_HOSTNAME=<This PC IP> 
+
+
+# In bashrc
+
+## to be connected with Former robot
+export ROS_MASTER_URI=http://192.168.127.200:11311
+export ROS_HOSTNAME=192.168.127.201 
+
