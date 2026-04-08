@@ -10,7 +10,7 @@ error() {
     exit 1
 }
 
-AINAV_PROJ_DIR="~/python_ws/viznav/depth-nav/deployment"
+AINAV_PROJ_DIR="$HOME/python_ws/viznav/devgru/deployment"
 CATKIN_WS="${CATKIN_WS:-$HOME/catkin_ws}"
 NAVDATA_EXTRACTOR_DIR="$CATKIN_WS/src/navdata_collector/run_script/data_extractor"
 EXTRACTOR_SCRIPT="$NAVDATA_EXTRACTOR_DIR/script_extract_bags.py"

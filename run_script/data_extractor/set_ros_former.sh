@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -e
+
+MASTER_IP=${1:-192.168.127.200}
+HOST_IP=${2:-192.168.127.201}
+
+export ROS_MASTER_URI=http://${MASTER_IP}:11311
+export ROS_HOSTNAME=${HOST_IP}
+
+echo "[INFO] ROS_MASTER_URI=$ROS_MASTER_URI"
+echo "[INFO] ROS_HOSTNAME=$ROS_HOSTNAME"
