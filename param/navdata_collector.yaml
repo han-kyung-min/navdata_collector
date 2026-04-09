@@ -15,8 +15,9 @@ navdata_collector:
     map_topic:          "/map"
     #metadata_topc:      "comp_metadata" # your choices: rgbd_metadata, scan_metadata  or  comp_metadata
     
-    #bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector/colldata"
-    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector/topomap"
+    #bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector/navdata"       # collision-free data
+    #bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector/colldata"      # collision data
+    bagfile_root_path:  "/media/glab/FetchSSD/results/navdata_collector/topomap"        # topological map
 
     max_time_per_round: 1800 # seconds (30 mins)
     max_nav_time:       3600 # seconds
@@ -29,8 +30,8 @@ navdata_extractor:
     inpath:             "/media/glab/FetchSSD/results/navdata_collector/topomap/2026-04-08-15-09"   # train
     outpath:            "/media/glab/FetchSSD/results/navdata_collector/topomap/processed"                  
     
-    #inpath:             "/media/results/navdata_collector/topomap/2026-01-28-15-34"      # topo map bag  
-    #outpath:            "/media/results/navdata_collector/topomap/processed"             # extracted topomap bag
+    #inpath:             "/media/glab/FetchSSD/results/navdata_collector/navdata/2026-01-28-15-34"      # topo map bag  
+    #outpath:            "/media/glab/FetchSSD/results/navdata_collector/navdata/processed"             # extracted topomap bag
 
     #rgb_topic:          "/camera/color/image_throttle/image_raw"
     #depth_topic:        "/camera/aligned_depth_to_color/depth_throttle/image_raw"

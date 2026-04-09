@@ -1,0 +1,20 @@
+
+
+base_dir = '/media/data/mydata/former_datasets/colldata/colldata-all' ;
+bag_dirs = dir( sprintf('%s/bag_*',base_dir) ) ;
+num_bag_dirs = length(bag_dirs) ;
+
+data_idx = 0 ;
+for idx=1:num_bag_dirs
+    
+    bag_dir = bag_dirs(idx) ;
+    bag_path = sprintf('%s/%s', bag_dir.folder, bag_dir.name ) ;
+
+    data_samples = dir( sprintf('%s/data*', bag_path) ) ;
+    num_samples = length(data_samples) ;
+
+    for ii=1:num_samples
+        src_data = sprintf('%s/%s', data_samples(ii).folder, data_samples(ii).name ) ;
+        tgt_data = sprintf('%s/%s', data_samples(ii).folder, data_samples(ii).name ) ;
+    end
+end
