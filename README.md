@@ -8,7 +8,7 @@ This package supports dataset collection, extraction, and topological map genera
 
 Unless a user intends to create their own dataset, the use of this package is generally limited.
 
-## 1 How to Setup
+## 1. How to Setup
 
 ```bash
 cd ~/catkin_ws/src
@@ -23,7 +23,7 @@ catkin_make install
 
 ---
 
-## 2 How to Extract Topological Map from Bagfile
+## 2. How to Extract Topological Map from Bagfile
 
 Modify `navdata_collector.yaml` (located in ~/catkin_ws/src/navdata_collector/param)  to set the correct paths for extracting bag file data.  
 Specifically, update the following fields:
@@ -48,7 +48,7 @@ The procedure extracts and synchronizes the metadata from the bag files recorded
 The extracted data is then copied to `$TOPOMAP_DIR`, where `slam_poses.txt` and the final topological map are generated.
     
 
-## 3 How to Collect Collision-free Dataset
+## 3. How to Collect Collision-free Dataset
 
 ### (1) Record Bag Files During Teleoperation
 
@@ -109,10 +109,10 @@ The script generates multiple folders. Each folder contains:
 > - Ground-truth waypoint sequences
 > - Additional metadata (if applicable)
 
-# 4 How to Collect Collision Dataset
+## 4. How to Collect Collision Dataset
 Collecting a collision dataset requires autonomous navigation using the DevGRU-base model, which is trained on a collision-free dataset. Therefore, [DevGRU](#) package must be properly installed prior to executing the steps below.
 
-## (1) Recording Collision Event Data
+### (1) Recording Collision Event Data
 
 > (i) Locate the robot at the starting node of a prebuilt topological map  
 > (ii) Then, execute the following cmd:
@@ -123,7 +123,7 @@ Collecting a collision dataset requires autonomous navigation using the DevGRU-b
 > (iii) During autonomous navigation, use the deadman switch button (L1) to stop the robot when a collision is imminent. Then, correct its pose and allow it to resume navigation. By repeating this procedure, multiple collision events can be recorded in a bag file.  
 > (iv) Press L1 + R1 + L2 to stop the process once a sufficient number of events has been collected.
 
-## (2) Extract Metadata Including Collision Events from Bag File
+### (2) Extract Metadata Including Collision Events from Bag File
 
 >Modify navdata_collector.yaml (located in ~/catkin_ws/src/navdata_collector/param) to set correct $INPATH and $OUTPATH to extract the bagfile data.
 >Specifically, modify navdata_collector['navdata_extractor']['inpath'] and navdata_collector['navdata_extractor']['outpath']
@@ -138,7 +138,7 @@ Collecting a collision dataset requires autonomous navigation using the DevGRU-b
 >$BASE_DIR is navdata_collector pkg in your catkin_ws folder. e.g) catkin_ws/src/navdata_collector
 >This process extracts and syncs the metadata stored in the bag file recorded in the previous step.
 
-## (3) Generate Collision Data from the extracted metadata
+### (3) Generate Collision Data from the extracted metadata
 
 This process requires the MATLAB GUI script located at:  
 $BASE_DIR/navdata_collector/run_script/data_extractor/matlab_script/script_colldata_collection.m  
