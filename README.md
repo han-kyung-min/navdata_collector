@@ -121,23 +121,31 @@ Collecting a collision dataset requires autonomous navigation using the DevGRU-b
 > cd $DevGRU_PROJECT_DIR/deployment/src
 > ./navigate_w_colldata_bagging.sh 
 > ```   
-> (iii) During autonomous navigation, use the deadman switch button (L1) to stop the robot when a collision is imminent. Then, correct its pose and allow it to resume navigation. By repeating this procedure, multiple collision events can be recorded in a bag file.  
+> (iii) During autonomous navigation, use the deadman switch button (L1) to stop the robot when a collision is imminent. Then, manually move the robot to a collision-free configuration and allow it to resume navigation. By repeating this procedure, multiple collision events can be recorded in a bag file.  
 > (iv) Press L1 + R1 + L2 to stop the process once a sufficient number of events has been collected.
 
 ### (2) Extract Metadata Including Collision Events from Bag File
 
->Modify navdata_collector.yaml (located in ~/catkin_ws/src/navdata_collector/param) to set correct $INPATH and $OUTPATH to extract the bagfile data.
->Specifically, modify navdata_collector['navdata_extractor']['inpath'] and navdata_collector['navdata_extractor']['outpath']
->$INPATH could be the folder generated from the previous data collection step whose name has YYYY-MM-DD-HH-MM with the file indicates if the bag file is for navdata or collision data. For example, coll_data file indicates this bag file contains collision data. The '$INPATH normally contains child bagfile folders such as bag_YYYY-MM-DD-HH-MM-SS. $OUTPATH must be a physically different folder from $OUTPATH.
+- Modify `navdata_collector.yaml` located in `~/catkin_ws/src/navdata_collector/param` to set the correct `$INPATH` and `$OUTPATH` for extracting bagfile data.  
+  Specifically, update the following fields:
 
->execute the following command to generate the topomap where $EXTRACTED_DATA_DIR is must be identical to $OUTPATH specified above. 
+  - `navdata_collector['navdata_extractor']['inpath']`
+  - `navdata_collector['navdata_extractor']['outpath']`
+
+- `$INPATH` should point to the folder generated in the previous data collection step. The folder name follows the format `YYYY-MM-DD-HH-MM` and may include a file indicating the type of data contained in the bag files. For example, the presence of a `coll_data` file indicates that the bag files correspond to collision data. Conversely, the presence of a `nav_data` file indicates that the bag files correspond to a collision-free dataset, which is used for training DevGRU or for building a topological map.  
+
+- `$INPATH` normally contains child bagfile folders such as `bag_YYYY-MM-DD-HH-MM-SS`.
+
+- `$OUTPATH` must be a physically different folder from `$INPATH`.
+
+- Execute the following command to generate the topomap, where `$EXTRACTED_DATA_DIR` must be identical to the `$OUTPATH` specified above.
 
 ```
  cd $BASE_DIR/navdata_collector/run_script/data_extractor
  ./generate_colldata_from_bag.sh 
 ```
->$BASE_DIR is navdata_collector pkg in your catkin_ws folder. e.g) catkin_ws/src/navdata_collector
->This process extracts and syncs the metadata stored in the bag file recorded in the previous step.
+- $BASE_DIR is navdata_collector pkg in your catkin_ws folder. e.g) catkin_ws/src/navdata_collector
+ his process extracts and syncs the metadata stored in the bag file recorded in the previous step.
 
 ### (3) Generate Collision Data from the extracted metadata
 
@@ -150,7 +158,11 @@ Before proceeding, ensure the following parameters are correctly configured:
 >- out_base_dir: Output directory for the generated dataset
 >- topomap_root_dir: Path to the pre-built topological maps
 
-Procedure:
->(i)  Run `script_colldata_collection.m` to generate the collision dataset  
->(ii) Run `script_gen_colldata_from_collected.m` to sample and copy a subset of the data into the training data directory
+**Procedure:**
 
+(i) Run `script_colldata_collection.m` to generate the collision dataset.  
+- This script launches a GUI that allows you to click the corrected subgoal (SG) on globally aligned topological nodes.  
+- By clicking the ground-truth SG, the script automatically generates waypoint trajectories based on Hermite splines.  
+- Continue the process until all collision events are all processed.
+
+(ii) Run `script_gen_colldata_from_collected.m` to sample and copy a subset of the data into the training data directory.  

@@ -4,15 +4,15 @@ clear all;
 close all; 
 clc;
 
-colldata_folder = '/media/mydata/former_datasets/colldata/colldata-10K' ;
-noncolldata_folder = '/media/mydata/former_datasets/colldata/noncolldata-30K' ;
+colldata_folder = '/storage/mydata/former_datasets/colldata/colldata-10K' ;
+noncolldata_folder = '/storage/mydata/former_datasets/colldata/noncolldata-30K' ;
 
 input_bag_paths = dir( sprintf('%s/bag_*', colldata_folder) ) ;
 
-mixed_8K_paths = '/media/mydata/former_datasets/colldata/mixed-8K' ;
-mixed_12K_paths = '/media/mydata/former_datasets/colldata/mixed-12K' ;
-mixed_16K_paths = '/media/mydata/former_datasets/colldata/mixed-16K' ;
-mixed_20K_paths = '/media/mydata/former_datasets/colldata/mixed-20K' ;
+mixed_8K_paths = '/storage/mydata/former_datasets/colldata/mixed-8K' ;
+mixed_12K_paths = '/storage/mydata/former_datasets/colldata/mixed-12K' ;
+mixed_16K_paths = '/storage/mydata/former_datasets/colldata/mixed-16K' ;
+mixed_20K_paths = '/storage/mydata/former_datasets/colldata/mixed-20K' ;
 
 rng(42);  
 
