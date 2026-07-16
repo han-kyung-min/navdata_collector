@@ -5,10 +5,10 @@
 # =========================================
 
 # Stop on error
-set -e
+#set -e
 
 # Optional: unset conflicting hostname (safety)
-unset ROS_HOSTNAME
+#unset ROS_HOSTNAME
 # Set ROS master and local IP
 export ROS_MASTER_URI=http://127.0.0.1:11311
 export ROS_IP=127.0.0.1

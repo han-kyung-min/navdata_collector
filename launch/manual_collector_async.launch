@@ -1,13 +1,22 @@
 <!-- -->
 <launch>
-  <!-- Logger config -->
     <env name="ROSCONSOLE_CONFIG_FILE"
-        value="$(find navdata_collector)/config/custom_rosconsole.conf"/>
+         value="$(find navdata_collector)/config/custom_rosconsole.conf"/>
 
+    <!-- Must be loaded before navdata_collector_node starts -->
+    <rosparam command="load"
+              file="$(find navdata_collector)/param/navdata_collector.yaml"/>
 
-    <node pkg="navdata_collector" type="navdata_collector_node" name="navdata_collector" output="screen">
-        <param name="rgbd_topic" type="string" value="navdata_collector/rgbd" />
+    <node pkg="navdata_collector"
+          type="navdata_collector_node"
+          name="navdata_collector"
+          output="screen">
+        <param name="rgbd_topic"
+               type="string"
+               value="/navdata_collector/rgbd"/>
     </node>
-    <node pkg="navdata_collector" type="viz_helper_node" name="viz_helper"/> <!--output="screen"/-->
 
+    <node pkg="navdata_collector"
+          type="viz_helper_node"
+          name="viz_helper"/>
 </launch>
