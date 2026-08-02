@@ -5,7 +5,7 @@
 # =========================================
 
 # Stop on error
-set -e
+#set -e
 
 # Optional: unset conflicting hostname (safety)
 unset ROS_HOSTNAME

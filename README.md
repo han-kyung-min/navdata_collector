@@ -41,7 +41,8 @@ After configuring the paths, execute the following command to generate the topol
 
 ```
 cd ~/catkin_ws/src/navdata_collector/run_script/data_extractor
-python generate_topomap_from_bag.py
+source set_ros_local.sh
+./generate_topomap_from_bag.sh
 ```
 
 The procedure extracts and synchronizes the metadata from the bag files recorded in the previous step.  
