@@ -4,7 +4,7 @@
 
 ## Overview
 
-This package supports dataset collection, extraction, and topological map generation for real-world robot deployment of the [DevGRU](#) project. 
+This package supports dataset collection, extraction, and topological map generation for real-world robot deployment of the [DevGRU](https://graphics.ewha.ac.kr/projects/details/devgru/) project. 
 
 Unless a user intends to create their own dataset, the use of this package is generally limited.
 
